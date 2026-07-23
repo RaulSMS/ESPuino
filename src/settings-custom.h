@@ -27,35 +27,35 @@
     #endif
 
     // RFID (via SPI - MFRC522 / PN5180)
-    #define RST_PIN                         4           // Reset pin for RFID reader
-    #define RFID_CS                         14          // GPIO for chip select (RFID)
-    #define RFID_MOSI                       3           // GPIO for master out slave in (RFID)
-    #define RFID_MISO                       8           // GPIO for master in slave out (RFID)
-    #define RFID_SCK                        9           // GPIO for clock-signal (RFID)
+    #define RST_PIN                         4           // GPIO4  ───► RFID RST
+    #define RFID_CS                         15          // GPIO15 ───► RFID CS (SDA)
+    #define RFID_MOSI                       6           // GPIO6  ───► RFID MOSI
+    #define RFID_MISO                       5           // GPIO5  ───► RFID MISO
+    #define RFID_SCK                        7           // GPIO7  ───► RFID SCK
 
     #if defined(RFID_READER_TYPE_RUNTIME) 
-        #define RFID_BUSY                   16          // PN5180 BUSY PIN
-        #define RFID_RST                    4           // PN5180 RESET PIN
-        #define RFID_IRQ                    39          // PN5180 IRQ PIN (only needed for low power card detection)
+        #define RFID_BUSY                   99          // Avoid GPIO39 (JTAG MTCK)
+        #define RFID_RST                    4           // GPIO4  ───► RFID RST
+        #define RFID_IRQ                    99          // Unused / Dummy
     #endif
 
     // I2S (DAC MAX98357A)
-    #define I2S_DOUT                        21          // Digital out (I2S)
-    #define I2S_BCLK                        47          // BCLK (I2S)
-    #define I2S_LRC                         45          // LRC (I2S)
+    #define I2S_DOUT                        21          // GPIO21 ───► I2S DIN
+    #define I2S_BCLK                        47          // GPIO47 ───► I2S BCLK
+    #define I2S_LRC                         45          // GPIO45 ───► I2S LRC (WS)
 
     // Rotary encoder
     #ifdef USEROTARY_ENABLE
         //#define REVERSE_ROTARY                        // To reverse encoder's direction
-        #define ROTARYENCODER_CLK           40          // rotary encoder's CLK
-        #define ROTARYENCODER_DT            41          // rotary encoder's DT
+        #define ROTARYENCODER_CLK           40          // GPIO40 ───► Rotary CLK
+        #define ROTARYENCODER_DT            41          // GPIO41 ───► Rotary DT
     #endif
 
     // Control-buttons (set to 99 to DISABLE; 0->48 for GPIO)
-    #define NEXT_BUTTON                      2          // Button 0: GPIO to detect next
-    #define PREVIOUS_BUTTON                 42          // Button 1: GPIO to detect previous
-    #define PAUSEPLAY_BUTTON                 1          // Button 2: GPIO to detect pause/play
-    #define ROTARYENCODER_BUTTON            43          // Rotary encoder push button (or set to 99 to disable)
+    #define NEXT_BUTTON                      2          // GPIO2  ───► Btn NEXT
+    #define PREVIOUS_BUTTON                 42          // GPIO42 ───► Btn PREV
+    #define PAUSEPLAY_BUTTON                 1          // GPIO1  ───► Btn PLAY/PAUSE
+    #define ROTARYENCODER_BUTTON            99          // Set to 99 (GPIO43 is mapped to U0TXD)
     #define BUTTON_4                        99          // Button 4: unnamed optional button
     #define BUTTON_5                        99          // Button 5: unnamed optional button
 
@@ -66,8 +66,8 @@
 
     // I2C-configuration (necessary for RC522 [only via i2c - not spi!] or port-expander)
     #ifdef I2C_2_ENABLE
-        #define ext_IIC_CLK                 4           // i2c-SCL (clock)
-        #define ext_IIC_DATA                2           // i2c-SDA (data)
+        #define ext_IIC_CLK                 16          // Assigned to free GPIO16
+        #define ext_IIC_DATA                17          // Assigned to free GPIO17
     #endif
 
     // Wake-up button
@@ -80,7 +80,7 @@
     #endif
 
     // (optional) Neopixel WS2812B
-    #define LED_PIN                         48          // GPIO for Neopixel-signaling
+    #define LED_PIN                         48          // GPIO48 ───► WS2812B LED DIN
 
     // (optional) Headphone-detection
     #ifdef HEADPHONE_ADJUST_ENABLE
@@ -88,23 +88,23 @@
         #define HP_DETECT                   99          // Disabled / Set to 99 if no headphone jack detect pin is used
     #endif
 
-	// (optional) Monitoring of battery-voltage via ADC
-	#ifdef MEASURE_BATTERY_VOLTAGE
-		#define VOLTAGE_READ_PIN	6		        // GPIO used to monitor battery-voltage via ADC
-		constexpr float offsetVoltage = 0.00;		// Correction value
-		constexpr uint16_t rdiv1 = 100;			    // Rdiv1 of voltage-divider (kOhms)
-		constexpr uint16_t rdiv2 = 100;			    // Rdiv2 of voltage-divider (kOhms)
-		constexpr adc_attenuation_t inputAttenuation = ADC_11db;
-	#endif
+    // (optional) Monitoring of battery-voltage via ADC
+    #ifdef MEASURE_BATTERY_VOLTAGE
+        #define VOLTAGE_READ_PIN            38          // Assigned to free GPIO38 (ADC cap, away from Octal PSRAM)
+        constexpr float offsetVoltage = 0.00;       // Correction value
+        constexpr uint16_t rdiv1 = 100;             // Rdiv1 of voltage-divider (kOhms)
+        constexpr uint16_t rdiv2 = 100;             // Rdiv2 of voltage-divider (kOhms)
+        constexpr adc_attenuation_t inputAttenuation = ADC_11db;
+    #endif
 
     // (optional) hallsensor
     #ifdef HALLEFFECT_SENSOR_ENABLE
-        #define HallEffectSensor_PIN        99  	// Disabled
+        #define HallEffectSensor_PIN        99          // Disabled
     #endif
 
     // (Optional) remote control via infrared
     #ifdef IR_CONTROL_ENABLE
-        #define IRLED_PIN                   99              // Disabled
+        #define IRLED_PIN                   99          // Disabled
         #define IR_DEBOUNCE                 200
         #define RC_PLAY                     0x68
         #define RC_PAUSE                    0x67

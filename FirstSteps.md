@@ -51,34 +51,41 @@ To adapt ESPuino to your hardware setup without PCA9555:
 
 ### Pinout Diagram (ESP32-S3-DevKitC-1)
 
+> [!IMPORTANT]
+> **Revision note:** the original draft of this diagram scattered the MFRC522 RFID pins across the header (CS on pin 20, SCK on pin 15, MOSI on pin 13, MISO on pin 12, RST way up on pin 4). Electrically that's fine — the ESP32-S3 can route SPI to almost any GPIO — but physically it meant jumper wires criss-crossing the header and interleaving with the MicroSD wires. The layout below instead follows the **actual physical pin order** of the J1/J3 headers as published in the [ESP32-S3-DevKitC-1 v1.0 User Guide pin layout](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/_images/ESP32-S3_DevKitC-1_pinlayout.jpg), so all 5 RFID signals sit on **5 consecutive physical pins** (J1, positions 4-8), and the MicroSD SPI wires stay on their own consecutive run (J1, positions 16-19) right below them — no interleaving, no crossed wires.
+
 ```text
-                           +------------------------+
-                           |  ESP32-S3-DevKitC-1    |
-                           +------------------------+
-   MAX98357A (Audio I2S)   |                        |   MicroSD (SPI Bus 1)
-   ---------------------   |                        |   -------------------
-   LRC (WS)    <---------> | GPIO 45        GPIO 10 | <---------> CS (SS)
-   BCLK        <---------> | GPIO 47        GPIO 11 | <---------> MOSI (CMD)
-   DIN         <---------> | GPIO 21        GPIO 12 | <---------> SCK (CLK)
-   GND         <---------> | GND            GPIO 13 | <---------> MISO (DAT0)
-   VIN / VCC   <---------> | 5V / 3.3V      3.3V    | <---------> VCC
-                           |                        |
-   WS2812B LED Ring (12B)  |                        |   MFRC522 RFID (SPI Bus 2)
-   ----------------------  |                        |   ------------------------
-   DI (Data In) <--------> | GPIO 48        GPIO 14 | <---------> CS (SDA)
-   VCC (5V)     <---------> | 5V             GPIO 9  | <---------> SCK
-   GND          <---------> | GND            GPIO 3  | <---------> MOSI
-                           |                GPIO 8  | <---------> MISO
-   Buttons / Encoder       |                GPIO 4  | <---------> RST
-   -----------------       |                        |
-   Btn Play/Pause <------> | GPIO 1                 |
-   Btn Next       <------> | GPIO 2                 |
-   Btn Prev       <------> | GPIO 42                |
-   Rotary CLK     <------> | GPIO 40                |
-   Rotary DT      <------> | GPIO 41                |
-   +5V / 3.3V / GND        | VIN / 3.3V / GND       |
-                           +------------------------+
+                      ESP32-S3-DevKitC-1 (top view, Micro-USB port at the bottom)
+
+        J1 — left header                              J3 — right header
+        ----------------                              ------------------
+   1    3V3                                       1    GND
+   2    3V3                                       2    GPIO43 (U0TXD)
+   3    RST (EN, chip reset — not a free GPIO)     3    GPIO44 (U0RXD)
+   4    GPIO4   ───► RFID RST                      4    GPIO1  ───► Btn PLAY/PAUSE
+   5    GPIO5   ───► RFID MISO                      5    GPIO2  ───► Btn NEXT
+   6    GPIO6   ───► RFID MOSI                      6    GPIO42 ───► Btn PREV
+   7    GPIO7   ───► RFID SCK                        7    GPIO41 ───► Rotary DT
+   8    GPIO15  ───► RFID CS (SDA)                  8    GPIO40 ───► Rotary CLK
+   9    GPIO16  (free)                              9    GPIO39 (JTAG MTCK — avoid)
+   10   GPIO17  (free)                             10    GPIO38 (free)
+   11   GPIO18  (free)                             11    GPIO37 * reserved (Octal PSRAM/Flash)
+   12   GPIO8   (free)                              12    GPIO36 * reserved (Octal PSRAM/Flash)
+   13   GPIO3   (free — strapping pin, best avoided) 13    GPIO35 * reserved (Octal PSRAM/Flash)
+   14   GPIO46  (input-only, free)                  14    GPIO0  (strapping pin — avoid)
+   15   GPIO9   (free)                              15    GPIO45 ───► I2S LRC (WS)
+   16   GPIO10  ───► SD CS (SS)                     16    GPIO48 ───► WS2812B LED DIN
+   17   GPIO11  ───► SD MOSI (CMD)                  17    GPIO47 ───► I2S BCLK
+   18   GPIO12  ───► SD SCK (CLK)                   18    GPIO21 ───► I2S DIN
+   19   GPIO13  ───► SD MISO (DAT0)                 19    GPIO20 (USB D+ — avoid)
+   20   GPIO14  (free)                              20    GPIO19 (USB D- — avoid)
+   21   5V                                          21    GND
+   22   GND                                         22    GND
 ```
+
+`*` On the N16R8 module (Octal SPI Flash + Octal PSRAM used in this build), GPIO35/36/37 are used internally and must not be wired to anything.
+
+Power/GND for the RFID reader: pull 3.3V from **J1 pin 1 or 2** (right at the top of the same header the RFID signals live on) and GND from either **J1 pin 22** or **J3 pin 1** — whichever is more convenient for your wiring, since GND is common across the whole board.
 
 ---
 
@@ -115,15 +122,20 @@ To adapt ESPuino to your hardware setup without PCA9555:
 > Make sure to set `#define NUM_LEDS 12` in `settings.h` or `settings-override.h`.
 
 ### D. MFRC522 RFID Reader (SPI Bus 2)
-| RC522 Pin | ESP32-S3 Pin | Code Configuration (`settings-custom.h`) |
-| :--- | :--- | :--- |
-| **SDA / CS** | GPIO 14 | `#define RFID_CS 14` |
-| **SCK** | GPIO 9 | `#define RFID_SCK 9` |
-| **MOSI** | GPIO 3 | `#define RFID_MOSI 3` |
-| **MISO** | GPIO 8 | `#define RFID_MISO 8` |
-| **RST** | GPIO 4 | `#define RFID_RST 4` |
-| **3.3V** | 3.3V | **IMPORTANT**: 3.3V ONLY |
-| **GND** | GND | Common GND |
+
+All 5 signal pins now sit on **consecutive physical pins on header J1** (pins 4-8), right under the 3V3 pins at the top of that same header — so the whole module can be wired with short, parallel jumpers instead of reaching across the board.
+
+| RC522 Pin | ESP32-S3 Pin | J1 Header Position | Code Configuration (`settings-custom.h`) |
+| :--- | :--- | :--- | :--- |
+| **RST** | GPIO 4 | J1-4 | `#define RFID_RST 4` |
+| **MISO** | GPIO 5 | J1-5 | `#define RFID_MISO 5` |
+| **MOSI** | GPIO 6 | J1-6 | `#define RFID_MOSI 6` |
+| **SCK** | GPIO 7 | J1-7 | `#define RFID_SCK 7` |
+| **SDA / CS** | GPIO 15 | J1-8 | `#define RFID_CS 15` |
+| **3.3V** | 3.3V | J1-1 or J1-2 | **IMPORTANT**: 3.3V ONLY |
+| **GND** | GND | J1-22 (or J3-1) | Common GND |
+
+> These replace the previous assignment (CS=14, SCK=9, MOSI=3, MISO=8, RST=4), which was electrically valid but physically scattered across the header and interleaved with the MicroSD SPI wires. GPIO3 in particular is also a JTAG strapping pin, so moving off it is a nice side benefit — it's now free again.
 
 ### E. Direct Buttons (Without PCA9555)
 | Button / Function | ESP32-S3 Pin | Code Configuration (`settings-custom.h`) |
@@ -151,4 +163,3 @@ The embedded ESPuino Web Interface (`management.html` & `accesspoint.html`) feat
 1. **Create `settings-override.h`** with your module selection (disabling `PORT_EXPANDER_ENABLE`).
 2. **Configure `settings-custom.h`** with the GPIOs listed above.
 3. Build and test the project using PlatformIO corresponding to the ESP32-S3 target environment (`-DHAL=99`).
-
