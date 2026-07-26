@@ -42,6 +42,16 @@ commits from blame — already wired up if you use the GitLens extension, otherw
 `platformio-override.ini` (gitignored, copy from `platformio-override.ini.sample`) lets you override
 build settings locally without touching `platformio.ini`.
 
+Because envs use `framework = arduino, espidf`, source-file selection is delegated to
+`src/CMakeLists.txt` (`FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)`), which globs
+**every** file under `src/` into one component — PlatformIO's `build_src_filter`/`src_filter` has no
+effect here (it warns `'src_filter' option cannot be used with ESP-IDF` and is silently ignored). This
+means you can't isolate a single file/module in-tree for a minimal repro (e.g. to rule out a hardware
+vs. software-interaction bug) by dropping an extra `.cpp` into `src/` with its own `setup()`/`loop()` —
+it'll compile alongside `main.cpp` and fail with duplicate symbols in *every* environment. For that,
+build a separate, standalone PlatformIO project elsewhere with plain `framework = arduino` (no
+`espidf`) instead, copying over just the board/memory build flags you need from this file.
+
 The `PLATFORM:` line `pio run` prints (e.g. `Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)`) is a
 static catalog label from the board's `name` field in `~/.platformio/platforms/.../boards/<board>.json`
 — it does not reflect this project's `board_build.*`/`build_flags` overrides (16 MB flash, PSRAM, etc.
@@ -122,6 +132,25 @@ implied by the other; conversely, don't assume every flag in a board env is nece
 (`board_build.flash_mode` when it matches `[env]`'s default, or forcing a `-D` that a library/board
 JSON already auto-detects for that chip, e.g. FastLED's `FASTLED_ESP32_HAS_RMT`) are copy-paste
 leftovers worth dropping.
+
+### LED driver: FastLED clockless backend (SPI vs. RMT)
+
+`src/Led.h` includes `<FastLED.h>` after defining board-specific macros; on ESP32, FastLED picks one
+clockless WS2812 backend at compile time (RMT by default, or a DMA/SPI-based one if
+`FASTLED_ESP32_USE_CLOCKLESS_SPI` is defined — see `.pio/libdeps/*/FastLED/src/platforms/esp/32/README.md`).
+This repo used to force the SPI backend unconditionally for every board (`FASTLED_ESP32_USE_CLOCKLESS_SPI`
+defined with no chip guard). On `esp32-s3-devkitc-1` that caused a hard-to-reproduce abort during normal
+operation — `ESP_ERROR_CHECK failed: ESP_ERR_TIMEOUT` in `SpiStripWs2812::waitDone()`
+(`led_strip_refresh_wait_done`), always once WiFi + the web server were up, never in an isolated
+LED-only sketch with no WiFi running. Root cause: that SPI/DMA path blocks on a single
+completion-wait per `FastLED.show()`, which is much less tolerant of brief WiFi-driven interrupt
+latency than RMT (RMT streams from a hardware ring buffer and only needs periodic refills). Fix:
+`Led.h` now only forces the SPI backend when *not* building for `CONFIG_IDF_TARGET_ESP32S3` (checked
+via `#include "sdkconfig.h"`), so `esp32-s3-devkitc-1` falls back to FastLED's default/recommended RMT
+driver, which has 4 TX-capable RMT channels to spare on that chip. If a similar "works standalone,
+aborts under load" LED symptom shows up on another board/HAL, this backend choice is the first place
+to check — and remember the CMake src-globbing note above means an isolated repro sketch has to live
+outside this repo, not in `src/`.
 
 ### Web UI
 
