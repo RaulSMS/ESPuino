@@ -20,7 +20,7 @@ This is a PlatformIO project — there is no plain `make`/`npm`. Common commands
 
 ```sh
 pio run -e esp32-s3-devkitc-1        # build one environment (see platformio.ini for the full list)
-pio run                              # build all default_envs (esp32-s3-devkitc-1, lolin_d32_pro_sdmmc_pe)
+pio run                              # build whatever's listed in [platformio] default_envs
 pio run -e <env> -t upload           # build + flash over USB
 pio run -e <env> -t upload -t monitor
 pio device monitor                   # serial monitor only (115200 baud, esp32_exception_decoder filter)
@@ -41,6 +41,12 @@ commits from blame — already wired up if you use the GitLens extension, otherw
 
 `platformio-override.ini` (gitignored, copy from `platformio-override.ini.sample`) lets you override
 build settings locally without touching `platformio.ini`.
+
+The `PLATFORM:` line `pio run` prints (e.g. `Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)`) is a
+static catalog label from the board's `name` field in `~/.platformio/platforms/.../boards/<board>.json`
+— it does not reflect this project's `board_build.*`/`build_flags` overrides (16 MB flash, PSRAM, etc.
+for `esp32-s3-devkitc-1`/N16R8). Trust the `HARDWARE:` line and later build output instead, and check
+actual PSRAM presence at runtime via the serial monitor's `PSRAM: %u bytes` log line from `main.cpp`.
 
 ## Architecture
 
@@ -91,6 +97,31 @@ Configuration is a layered `#include` chain rooted at `src/settings.h`:
 
 Numeric command codes (button actions, modification-card actions, playlist/playback modes, operation
 modes) are all centralized in `src/values.h` and dispatched through `Cmd.cpp`.
+
+### ESP-IDF config: `sdkconfig.defaults`
+
+`sdkconfig.defaults` is the one ESP-IDF config baseline shared by every PlatformIO environment (it
+sits alongside, not per-env). On first build, PlatformIO expands it into a per-env `sdkconfig.<env>`
+file (e.g. `sdkconfig.esp32-s3-devkitc-1`), which is what's actually used afterwards. The
+`pre:updateSdkConfig.py` extra_script compares `sdkconfig.defaults`' mtime against the last build and,
+if it's newer, deletes all generated `sdkconfig.*` files so they regenerate from the edited defaults —
+so editing `sdkconfig.defaults` and rebuilding is safe, but if a stale `sdkconfig.<env>` ever survives
+a change unexpectedly, that script/timestamp logic is where to look.
+
+Per-board hardware differences that aren't expressible as a simple `-D` build flag go here instead —
+e.g. Octal- vs Quad-SPI PSRAM mode (`CONFIG_SPIRAM_MODE_OCT`) or disabling Classic Bluetooth
+(`CONFIG_BT_CLASSIC_ENABLED`) on chips that lack that radio (ESP32-S3 is BLE-only). These settings and
+the corresponding `platformio.ini` per-env settings are a matched pair, not independent knobs — e.g.
+for `esp32-s3-devkitc-1` (an N16R8 module: 16 MB quad flash + 8 MB **octal** PSRAM),
+`board_build.memory_type = qio_opi` in `platformio.ini` must agree with `CONFIG_SPIRAM_MODE_OCT=y` in
+`sdkconfig.defaults`, and `lib_ignore = ESP32-A2DP` in that env must agree with
+`CONFIG_BT_CLASSIC_ENABLED` being unset — changing one side without the other breaks PSRAM init or
+leaves a library configured for a radio the chip doesn't have. When adding/reviewing a board env,
+check both files together rather than assuming a flag added to one is redundant with something already
+implied by the other; conversely, don't assume every flag in a board env is necessary — some
+(`board_build.flash_mode` when it matches `[env]`'s default, or forcing a `-D` that a library/board
+JSON already auto-detects for that chip, e.g. FastLED's `FASTLED_ESP32_HAS_RMT`) are copy-paste
+leftovers worth dropping.
 
 ### Web UI
 
