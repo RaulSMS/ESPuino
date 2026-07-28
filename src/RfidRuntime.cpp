@@ -6,12 +6,14 @@
 #include "Queues.h"
 #include "Rfid.h"
 #include "RfidConfig.h"
+#include "System.h"
 
 extern void RfidMfrc522_Init(uint8_t readerType);
 extern void RfidMfrc522_Cyclic(void);
 extern void RfidMfrc522_Exit(void);
 extern void RfidMfrc522_TaskReset(void);
 extern void RfidMfrc522_WakeupCheck(void);
+extern void RfidMfrc522_RequestReset(void);
 
 extern void RfidPn5180_Init(void);
 extern void RfidPn5180_WakeupHandling(void);
@@ -99,6 +101,23 @@ void Rfid_WakeupCheck(void) {
 		RfidPn5180_WakeupCheck();
 	} else {
 		RfidMfrc522_WakeupCheck();
+	}
+#endif
+}
+
+// Manually re-initializes the RFID reader (e.g. triggered from the web UI) without requiring a
+// full device reboot. Picked up asynchronously by the reader's own task to avoid racing its SPI/I2C
+// traffic; see RfidMfrc522_RequestReset().
+void Rfid_ResetReader(void) {
+#if defined(RFID_READER_TYPE_RUNTIME)
+	RfidReaderType readerType = RfidConfig_GetReaderType();
+	if ((readerType == RfidReaderType::TYPE_MFRC522_SPI) || (readerType == RfidReaderType::TYPE_MFRC522_I2C)) {
+		Log_Println("RFID: Manual reader reset requested", LOGLEVEL_NOTICE);
+		RfidMfrc522_RequestReset();
+		System_IndicateOk();
+	} else {
+		Log_Println("RFID: Manual reset isn't supported for PN5180 yet", LOGLEVEL_ERROR);
+		System_IndicateError();
 	}
 #endif
 }

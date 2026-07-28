@@ -106,7 +106,45 @@ Configuration is a layered `#include` chain rooted at `src/settings.h`:
    + count, rotary encoder pins, button GPIOs, power control pins.
 
 Numeric command codes (button actions, modification-card actions, playlist/playback modes, operation
-modes) are all centralized in `src/values.h` and dispatched through `Cmd.cpp`.
+modes) are all centralized in `src/values.h` and dispatched through `Cmd.cpp`. Adding a new command
+(e.g. a maintenance action triggerable from the web UI) touches four places: the `CMD_*` numeric
+constant in `values.h` (there's a free 156-169 gap in the 100s "system/modification" block); a
+`case CMD_*:` in `Cmd_Action()` in `Cmd.cpp` — this is the single dispatcher every input source
+(buttons, IR remote, RFID modification tags, MQTT, the generic websocket `{"controls":{"action": N}}`
+message) funnels through, so one case makes it reachable from all of them; and, to make it
+*discoverable* in the web UI rather than only callable by number, add the id to the `cmds` array
+(physical-button assignment dropdowns) and/or `mods` array (RFID-modification-tag assignment + the
+Control tab's "run a command now" dropdown/button) in `html/management.html`'s
+`replaceCommandSelect`/`addOption` setup — both arrays feed the same generic select-population code,
+and each option's label comes from the locale key `files.rfid.mod.cmd.<id>` (add it to all three of
+`html/locales/{de,en,fr}.json`, not just `en.json`, or the label falls back to the raw i18next key).
+
+### RFID reader auto-detection and the RST-pin hazard
+
+`RfidConfig.cpp`'s `RfidConfig_AutoDetectReader()` probes for a PN5180 *first*, before ever checking
+for an MFRC522, by constructing a real `PN5180` object on `RFID_CS`/`RFID_BUSY`/`RFID_RST` and
+running its actual `begin()`/`reset()` sequence — this happens on every boot as a "is the previously
+detected reader still there" sanity check, not just on first-ever boot. On the stock HALs (`settings-
+complete.h`, `settings-lolin_d32_pro*.h`, `settings-ttgo_t8.h`) this is harmless because those boards
+set the MFRC522's own `RST_PIN` to a dummy `99` (MFRC522 there relies purely on SPI soft-reset, per
+their own comments — `RST_PIN` is *not* the library's `UNUSED_PIN` sentinel, which is `UINT8_MAX`/255,
+so `99` still runs through `pinMode`/`digitalRead` on an invalid-but-harmless GPIO number every time,
+just not a real one). A custom HAL that wires a *real* reset line to its MFRC522 and reuses that same
+GPIO number for `RFID_RST` (the PN5180 slot) recreates a genuine hardware hazard: the PN5180 probe's
+reset pulse and garbage PN5180-protocol SPI bytes land directly on the real MFRC522 chip before it's
+ever properly initialized, intermittently wedging its SPI interface for that boot cycle (only a
+hardware reset pulse reliably recovers it; a soft-reset command sent over an already-wedged SPI link
+often doesn't). Fixed by skipping the PN5180 probe in `RfidConfig_AutoDetectReader()` whenever
+`RFID_BUSY == 99` (this codebase's established "not wired" sentinel, same convention as
+`IRLED_PIN`/`ROTARYENCODER_BUTTON`) — check this pin-sharing pattern first for any "RFID reader is
+flaky/dead until reboot, but SPI itself is fine" report on a custom HAL. `RfidMfrc522.cpp`'s task now
+also self-heals from a wedged reader regardless of cause: every ~5s while idle it verifies `VersionReg`
+still reads as a valid MFRC522 signature (`IsValidMfrc522Version()`, exposed via `RfidConfig.h`) and
+re-runs `PCD_Init()` if not, so a bad boot recovers in seconds rather than requiring a power cycle. A
+manual trigger for the same recovery path is exposed as `CMD_RESET_RFID_READER` — the request is
+just a `volatile bool` flag set by `RfidMfrc522_RequestReset()` and picked up by the reader's own
+FreeRTOS task on its next idle poll, not performed from the calling context directly, since MFRC522's
+library isn't safe to call into from two tasks at once.
 
 ### ESP-IDF config: `sdkconfig.defaults`
 

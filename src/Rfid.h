@@ -16,3 +16,4 @@ void Rfid_TaskResume(void);
 void Rfid_TaskReset(void);
 void Rfid_WakeupCheck(void);
 void Rfid_PreferenceLookupHandler(void);
+void Rfid_ResetReader(void);

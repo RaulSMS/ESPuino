@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "Mqtt.h"
 #include "Queues.h"
+#include "Rfid.h"
 #include "System.h"
 #include "Wlan.h"
 
@@ -254,6 +255,11 @@ void Cmd_Action(const uint16_t mod) {
 			break;
 		}
 #endif
+
+		case CMD_RESET_RFID_READER: {
+			Rfid_ResetReader();
+			break;
+		}
 
 		case CMD_TELL_IP_ADDRESS: {
 			if (Wlan_IsConnected()) {

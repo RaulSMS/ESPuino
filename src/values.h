@@ -60,6 +60,7 @@
 #define CMD_TOGGLE_AMBIENT_LIGHT		 153 // Command: toggles the ambient light
 #define CMD_BRIGHTNESS_UP				 154 // Command: raise LED-brightness by one step
 #define CMD_BRIGHTNESS_DOWN				 155 // Command: lower LED-brightness by one step
+#define CMD_RESET_RFID_READER			 156 // Command: re-initialize the RFID reader without a full reboot
 
 #define CMD_PLAYPAUSE	   170 // Command: play/pause
 #define CMD_PREVTRACK	   171 // Command: previous track
