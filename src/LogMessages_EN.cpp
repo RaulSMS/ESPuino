@@ -180,6 +180,7 @@ const char rememberLastVolume[] = "Restored volume used before last shutdown. Th
 const char unableToStartFtpServer[] = "FTP-server cannot be started. This is because FTP-service is already active or because WiFi is unavailable.";
 const char unableToTellIpAddress[] = "IP-address can't be announced as there's no WiFi-connection available.";
 const char unableToTellTime[] = "Time can't be announced as there's no WiFi-connection available.";
+const char unableToTellBatteryLevel[] = "Battery level can't be announced (no WiFi-connection available, or battery-monitoring is disabled).";
 const char newPlayModeStereo[] = "New mode: stereo";
 const char newPlayModeMono[] = "New mode: mono";
 const char portExpanderFound[] = "Port-expander found";

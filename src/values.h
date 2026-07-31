@@ -61,6 +61,7 @@
 #define CMD_BRIGHTNESS_UP				 154 // Command: raise LED-brightness by one step
 #define CMD_BRIGHTNESS_DOWN				 155 // Command: lower LED-brightness by one step
 #define CMD_RESET_RFID_READER			 156 // Command: re-initialize the RFID reader without a full reboot
+#define CMD_TELL_BATTERY_LEVEL			 157 // Command: ESPuino announces its battery level via speech
 
 #define CMD_PLAYPAUSE	   170 // Command: play/pause
 #define CMD_PREVTRACK	   171 // Command: previous track
@@ -104,9 +105,11 @@
 #define SEEK_POS_PERCENT 3 // Seek to position (0-100)
 
 // TTS
-#define TTS_NONE		 0 // Do nothng (IDLE)
-#define TTS_IP_ADDRESS	 1 // Tell IP-address
-#define TTS_CURRENT_TIME 2 // Tell current time
+#define TTS_NONE		  0 // Do nothng (IDLE)
+#define TTS_IP_ADDRESS	  1 // Tell IP-address
+#define TTS_CURRENT_TIME  2 // Tell current time
+#define TTS_BATTERY_LEVEL 3 // Tell battery level (on demand)
+#define TTS_BATTERY_LOW	  4 // Tell battery is low + current level (automatic warning)
 
 // supported languages
 #define DE 1

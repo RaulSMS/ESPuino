@@ -10,7 +10,8 @@
 	//   - MAX98357A I2S DAC
 	//   - 12-LED WS2812B Neopixel ring
 	//   - SPI SD card (no SD_MMC)
-	//   - Rotary encoder
+	//   - No rotary encoder
+	//   - Battery voltage monitoring (ADC + voltage-divider)
 	//   - No PCA9555 port expander
 
 	//################## HARDWARE-PLATFORM ###############################
@@ -31,10 +32,10 @@
 	//#define HEADPHONE_ADJUST_ENABLE       // Headphone detection disabled (HP_DETECT=99 in custom HAL)
 	//#define PLAY_MONO_SPEAKER
 	#define SHUTDOWN_IF_SD_BOOT_FAILS       // Put ESP to deepsleep if SD boot fails
-	//#define MEASURE_BATTERY_VOLTAGE       // Battery measurement disabled for now
+	#define MEASURE_BATTERY_VOLTAGE         // Battery measurement via ADC + voltage-divider
 	//#define SHUTDOWN_ON_BAT_CRITICAL
 	//#define PLAY_LAST_RFID_AFTER_REBOOT
-	#define USEROTARY_ENABLE                // Rotary encoder enabled
+	//#define USEROTARY_ENABLE              // Rotary encoder disabled: not used
 	//#define BLUETOOTH_ENABLE              // Bluetooth disabled to save resources
 	//#define IR_CONTROL_ENABLE
 	//#define PAUSE_WHEN_RFID_REMOVED
@@ -179,10 +180,13 @@
 		#define BATTERY_MEASURE_ENABLE
 		constexpr uint8_t s_batteryCheckInterval = 10;
 
-		constexpr float s_warningLowVoltage = 3.0;
-		constexpr float s_warningCriticalVoltage = 2.9;
-		constexpr float s_voltageIndicatorLow = 2.9;
-		constexpr float s_voltageIndicatorHigh = 3.3;
+		// Tuned for a single-cell LiPo: full 4.2V, nominal 3.7V, safe cutoff 3.2-3.3V,
+		// absolute minimum 3.0V, damage zone below 2.5V. Critical stays at the top of the
+		// safe-cutoff range, well clear of the damage zone.
+		constexpr float s_warningLowVoltage = 3.3;
+		constexpr float s_warningCriticalVoltage = 3.2;
+		constexpr float s_voltageIndicatorLow = 3.2;
+		constexpr float s_voltageIndicatorHigh = 4.2;
 	#endif
 
 	// enable I2C if necessary

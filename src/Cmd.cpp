@@ -287,6 +287,24 @@ void Cmd_Action(const uint16_t mod) {
 			break;
 		}
 
+		case CMD_TELL_BATTERY_LEVEL: {
+#ifdef BATTERY_MEASURE_ENABLE
+			if (Wlan_IsConnected()) {
+				gPlayProperties.tellMode = TTS_BATTERY_LEVEL;
+				gPlayProperties.currentSpeechActive = true;
+				gPlayProperties.lastSpeechActive = true;
+				System_IndicateOk();
+			} else {
+				Log_Println(unableToTellBatteryLevel, LOGLEVEL_ERROR);
+				System_IndicateError();
+			}
+#else
+			Log_Println(unableToTellBatteryLevel, LOGLEVEL_ERROR);
+			System_IndicateError();
+#endif
+			break;
+		}
+
 		case CMD_PLAYPAUSE: {
 			if ((OPMODE_NORMAL == System_GetOperationMode()) || (OPMODE_BLUETOOTH_SOURCE == System_GetOperationMode())) {
 				AudioPlayer_SetTrackControl(PAUSEPLAY);

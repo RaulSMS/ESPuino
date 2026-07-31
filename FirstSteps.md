@@ -11,7 +11,8 @@ This document describes how to configure and wire your specific hardware compone
 - **LED Ring**: AZDelivery 3 x RGB LED Ring 5V compatible with WS2812B (12-Bit / 12 LEDs, 38mm)
 - **Card Reader**: Micro SD Module 3.3V SPI
 - **RFID Reader**: MFRC522 (SPI) or PN5180
-- **Controls**: Direct GPIO Buttons and/or Rotary Encoder
+- **Controls**: Direct GPIO Buttons only (no rotary encoder)
+- **Battery Monitoring**: ADC + resistor voltage-divider (no fuel-gauge IC)
 
 ---
 
@@ -36,6 +37,8 @@ To adapt ESPuino to your hardware setup without PCA9555:
 
 2. **`src/settings.h` / `src/settings-override.h`**:
    - Ensure `#define PORT_EXPANDER_ENABLE` is **commented out / disabled**.
+   - Ensure `#define USEROTARY_ENABLE` is **commented out / disabled** (no rotary encoder in this build).
+   - Ensure `#define MEASURE_BATTERY_VOLTAGE` is **enabled** (battery-voltage monitoring via ADC + voltage-divider).
    - Set `#define NUM_LEDS 12` for your 12-LED WS2812B ring.
    - You can create `src/settings-override.h` to override default settings without modifying base project files directly.
 
@@ -65,15 +68,15 @@ To adapt ESPuino to your hardware setup without PCA9555:
    4    GPIO4   ───► RFID RST                      4    GPIO1  ───► Btn PLAY/PAUSE
    5    GPIO5   ───► RFID MISO                      5    GPIO2  ───► Btn NEXT
    6    GPIO6   ───► RFID MOSI                      6    GPIO42 ───► Btn PREV
-   7    GPIO7   ───► RFID SCK                        7    GPIO41 ───► Rotary DT
-   8    GPIO15  ───► RFID CS (SDA)                  8    GPIO40 ───► Rotary CLK
+   7    GPIO7   ───► RFID SCK                        7    GPIO41 (free — no rotary encoder)
+   8    GPIO15  ───► RFID CS (SDA)                  8    GPIO40 (free — no rotary encoder)
    9    GPIO16  (free)                              9    GPIO39 (JTAG MTCK — avoid)
-   10   GPIO17  (free)                             10    GPIO38 (free)
+   10   GPIO17  (free)                             10    GPIO38 (free — no ADC channel, see note below)
    11   GPIO18  (free)                             11    GPIO37 * reserved (Octal PSRAM/Flash)
    12   GPIO8   (free)                              12    GPIO36 * reserved (Octal PSRAM/Flash)
    13   GPIO3   (free — strapping pin, best avoided) 13    GPIO35 * reserved (Octal PSRAM/Flash)
    14   GPIO46  (input-only, free)                  14    GPIO0  (strapping pin — avoid)
-   15   GPIO9   (free)                              15    GPIO45 ───► I2S LRC (WS)
+   15   GPIO9   ───► Battery ADC (voltage-divider)   15    GPIO45 ───► I2S LRC (WS)
    16   GPIO10  ───► SD CS (SS)                     16    GPIO48 ───► WS2812B LED DIN
    17   GPIO11  ───► SD MOSI (CMD)                  17    GPIO47 ───► I2S BCLK
    18   GPIO12  ───► SD SCK (CLK)                   18    GPIO21 ───► I2S DIN
@@ -143,10 +146,98 @@ All 5 signal pins now sit on **consecutive physical pins on header J1** (pins 4-
 | **PAUSE/PLAY** | GPIO 1 | `#define PAUSEPLAY_BUTTON 1` |
 | **NEXT** | GPIO 2 | `#define NEXT_BUTTON 2` |
 | **PREVIOUS** | GPIO 42 | `#define PREVIOUS_BUTTON 42` |
-| **ROTARY CLK** | GPIO 40 | `#define ROTARYENCODER_CLK 40` |
-| **ROTARY DT** | GPIO 41 | `#define ROTARYENCODER_DT 41` |
 
----
+> [!NOTE]
+> No rotary encoder in this build: `USEROTARY_ENABLE` is disabled in `settings-override.h`, so
+> `ROTARYENCODER_CLK`/`ROTARYENCODER_DT` (GPIO40/GPIO41) are left unwired and free for other use.
+> `WAKEUP_BUTTON` is set to `PAUSEPLAY_BUTTON`, so deep-sleep wakeup does not depend on the rotary
+> encoder either.
+
+### F. Battery Voltage Monitoring (ADC + Voltage-Divider)
+
+No fuel-gauge IC — just a resistor divider into an ADC-capable GPIO.
+
+> [!IMPORTANT]
+> **The pin must be an ADC1 channel.** On the ESP32-S3, *only* GPIO1-10 have any ADC functionality at
+> all (ADC1 = GPIO1-10, ADC2 = GPIO11-20). ADC2 is unusable here anyway since it's shared with the
+> WiFi driver and reads become unreliable once WiFi is connected. Any other GPIO — including GPIO38,
+> used in an earlier draft of this doc — has **no ADC channel whatsoever**; `analogReadMilliVolts()`
+> on such a pin doesn't just read garbage, it crashes the firmware (`Guru Meditation Error:
+> LoadProhibited` inside `__analogReadMilliVolts`), because the Arduino core doesn't check the error
+> return from `adc_oneshot_io_to_channel()` before indexing an internal handle array with the
+> (uninitialized) unit number. GPIO9 was chosen because it's the last free ADC1 pin — GPIO1/2/4/5/6/7/10
+> are already used by buttons/RFID/SD, and GPIO3 is a strapping pin best left alone.
+
+| Signal | ESP32-S3 Pin | Code Configuration (`settings-custom.h` / `settings-override.h`) |
+| :--- | :--- | :--- |
+| **Battery ADC** | GPIO 9 | `#define VOLTAGE_READ_PIN 9` |
+| **Divider R1** (Battery+ → ADC node) | 100 kΩ | `constexpr uint16_t rdiv1 = 100;` |
+| **Divider R2** (ADC node → GND) | 100 kΩ | `constexpr uint16_t rdiv2 = 100;` |
+| **ADC attenuation** | — | `constexpr adc_attenuation_t inputAttenuation = ADC_11db;` |
+
+Wiring: `Battery+` → `R1 (100k)` → **junction (also to GPIO9)** → `R2 (100k)` → `GND`. With a 1:1
+divider the ADC sees half of battery voltage, so a fully-charged single-cell LiPo (~4.2V) reads as
+~2.1V at the pin — safely inside the ESP32-S3's ADC input range. Enable the feature with
+`#define MEASURE_BATTERY_VOLTAGE` in `settings-override.h`.
+
+Thresholds in `settings-override.h` are tuned for a single-cell LiPo (full 4.2V / nominal 3.7V / safe
+cutoff 3.2-3.3V / absolute minimum 3.0V / damage zone below 2.5V):
+
+| Constant | Value | Meaning |
+| :--- | :--- | :--- |
+| `s_voltageIndicatorHigh` | 4.2V | LED indicator / charge-% reads 100% at or above this |
+| `s_voltageIndicatorLow` | 3.2V | LED indicator / charge-% reads 0% at or below this |
+| `s_warningLowVoltage` | 3.3V | `Battery_IsLow()` warning threshold |
+| `s_warningCriticalVoltage` | 3.2V | `Battery_IsCritical()` threshold (top of the safe-cutoff range, well clear of the 2.5V damage zone) |
+
+> [!NOTE]
+> These four values are seeded into NVS (flash) on first boot only — `Battery_InitInner()` in
+> `src/BatteryMeasureVoltage.cpp` reads them from NVS first and only falls back to the header constants
+> if nothing is stored yet. If you already booted once with different defaults, editing the header
+> won't change the running device; update the values on the Web UI's battery-settings tab instead
+> (or erase NVS to re-seed from the header).
+
+### On-Demand Measurement (Web UI / Logs)
+
+`CMD_MEASUREBATTERY` (id `178`) triggers an immediate measurement: it logs the current voltage and
+charge estimate (`Battery_LogStatus()`), publishes to MQTT if enabled, and flashes the LED voltage
+indicator. It's reachable from:
+- **Control tab** → **"Execute Modification"** section (below the track/progress display) → select
+  **"🔋 Show battery voltage"** in the **Modification** dropdown → **Execute** button.
+- A physical button (already mapped to `BUTTON_3_SHORT` in `settings-override.h`).
+- An RFID modification tag assigned to command `178`.
+- MQTT / the generic websocket `{"controls":{"action": 178}}` message.
+
+The serial log line looks like:
+```
+I [xxxxx] Current battery-voltage: 3.87 V
+I [xxxxx] Current battery charge: 64.29 %
+```
+
+### Spoken Battery-Level Announcement
+
+`CMD_TELL_BATTERY_LEVEL` (id `157`) speaks the battery level out loud through the speaker, the same
+way `CMD_TELL_IP_ADDRESS` (151, "Announce IP-Address") and `CMD_TELL_CURRENT_TIME` (152, "Announce
+current time") already do — via the `connecttospeech()` online TTS engine (Google Translate TTS), so
+**it requires an active WiFi connection**, independent of whether `MEASURE_BATTERY_VOLTAGE` is wired up.
+It says something like *"Battery level: 82 percent, 3.97 volts"* (localized to DE/EN/FR based on the
+firmware's `LANGUAGE` setting). Reachable the same way as above — select **"🔋 Announce battery
+level"** instead of **"🔋 Show battery voltage"** in the same dropdown, or assign it to a button/RFID
+tag/MQTT/websocket the same way (action id `157`).
+
+### Automatic Low-Battery Warning (LED + Speech)
+
+When a periodic measurement (`Battery_Cyclic()` in `src/Battery.cpp`, every `s_batteryCheckInterval`
+minutes) finds the voltage below `s_warningLowVoltage`, ESPuino already flashed the LED voltage
+warning and logged an error — it now **also speaks** *"Battery low: 82 percent, 3.97 volts"* the same
+way as the on-demand announcement above, provided WiFi is connected (silently skipped otherwise; the
+LED/log warning still fires regardless of WiFi).
+
+This is edge-triggered, not repeated every check: it speaks once when voltage first drops below
+`s_warningLowVoltage`, and won't speak again until the level recovers above that threshold and drops
+below it again — otherwise, with a short check interval (some users set it to 1 minute via the Web
+UI), it would nag every single cycle while low. The LED warning and log line still repeat every check
+as before; only the speech is throttled to once per low-battery episode.
 
 ## 6. Web UI & Language Settings
 
@@ -160,6 +251,7 @@ The embedded ESPuino Web Interface (`management.html` & `accesspoint.html`) feat
 
 ## 7. Next Steps
 
-1. **Create `settings-override.h`** with your module selection (disabling `PORT_EXPANDER_ENABLE`).
+1. **Create `settings-override.h`** with your module selection (disabling `PORT_EXPANDER_ENABLE` and
+   `USEROTARY_ENABLE`, enabling `MEASURE_BATTERY_VOLTAGE`).
 2. **Configure `settings-custom.h`** with the GPIOs listed above.
 3. Build and test the project using PlatformIO corresponding to the ESP32-S3 target environment (`-DHAL=99`).

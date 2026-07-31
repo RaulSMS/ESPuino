@@ -90,7 +90,9 @@
 
     // (optional) Monitoring of battery-voltage via ADC
     #ifdef MEASURE_BATTERY_VOLTAGE
-        #define VOLTAGE_READ_PIN            38          // Assigned to free GPIO38 (ADC cap, away from Octal PSRAM)
+        // Must be an ADC1 pin (GPIO1-10 on ESP32-S3): ADC2 is unusable while WiFi is active, and no
+        // other GPIO has any ADC channel at all (e.g. GPIO38 silently crashes analogReadMilliVolts()).
+        #define VOLTAGE_READ_PIN            9           // Assigned to free GPIO9 (ADC1_CH8)
         constexpr float offsetVoltage = 0.00;       // Correction value
         constexpr uint16_t rdiv1 = 100;             // Rdiv1 of voltage-divider (kOhms)
         constexpr uint16_t rdiv2 = 100;             // Rdiv2 of voltage-divider (kOhms)
