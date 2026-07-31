@@ -22,3 +22,6 @@ RfidReaderType RfidConfig_AutoDetectReader(void);
 
 // Check if a specific reader type is available
 bool RfidConfig_IsReaderAvailable(RfidReaderType readerType);
+
+// Check if a VersionReg readout looks like a genuine (or cloned) MFRC522
+bool IsValidMfrc522Version(byte version);

@@ -178,6 +178,7 @@ const char rememberLastVolume[] = "Volume utilisé avant le dernier arrêt resta
 const char unableToStartFtpServer[] = "Le serveur FTP ne peut pas être démarré. Cela est dû au fait que le service FTP est déjà actif ou parce que le WiFi est indisponible.";
 const char unableToTellIpAddress[] = "L'adresse IP ne peut pas être annoncée car il n'y a pas de connexion WiFi disponible.";
 const char unableToTellTime[] = "L'heure ne peut pas être annoncée car il n'y a pas de connexion WiFi disponible.";
+const char unableToTellBatteryLevel[] = "Le niveau de batterie ne peut pas être annoncé (pas de connexion WiFi disponible, ou surveillance de la batterie désactivée).";
 const char newPlayModeStereo[] = "Nouveau mode : stéréo";
 const char newPlayModeMono[] = "Nouveau mode : mono";
 const char portExpanderFound[] = "Extenseur de port trouvé";

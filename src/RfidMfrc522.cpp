@@ -26,6 +26,15 @@ extern unsigned long Rfid_LastRfidCheckTimestamp;
 extern TaskHandle_t rfidTaskHandle;
 static void RfidMfrc522_Task(void *parameter);
 
+// Set by RfidMfrc522_RequestReset() (e.g. a manual "reset RFID reader" command from the web UI);
+// picked up and cleared by RfidMfrc522_TaskImpl() from within the task that owns the reader, so a
+// reset never races the task's own SPI/I2C traffic.
+static volatile bool gRfidReinitRequested = false;
+
+void RfidMfrc522_RequestReset(void) {
+	gRfidReinitRequested = true;
+}
+
 	#if defined(RFID_READER_TYPE_RUNTIME)
 extern TwoWire i2cBusTwo;
 static MFRC522_I2C mfrc522I2C(MFRC522_ADDR, RST_PIN, &i2cBusTwo);
@@ -76,9 +85,22 @@ void RfidMfrc522_TaskReset(void) {
 	Rfid_LastRfidCheckTimestamp = millis();
 }
 
+// Re-runs the same init sequence as RfidMfrc522_Init() (reset + antenna gain) on an already-
+// constructed reader. Used for both the periodic health-check recovery and manual reset requests.
+template <typename Reader>
+static void RfidMfrc522_Reinit(Reader &reader) {
+	uint8_t rfidGain = gPrefsRfid.getUChar("mfrc522Gain", 7u);
+	rfidGain = (rfidGain & 0x07) << 4;
+	reader.PCD_Init();
+	delay(10);
+	reader.PCD_SetAntennaGain(rfidGain);
+}
+
 template <typename Reader>
 static void RfidMfrc522_TaskImpl(Reader &reader) {
 	uint8_t control = 0x00;
+	uint32_t lastHealthCheckTimestamp = 0;
+	constexpr uint32_t healthCheckIntervalMs = 5000;
 
 	for (;;) {
 		if (RFID_SCAN_INTERVAL / 2 >= 20) {
@@ -97,6 +119,24 @@ static void RfidMfrc522_TaskImpl(Reader &reader) {
 			// Reset the loop if no new card is present on the sensor/reader. This saves the entire process when idle.
 
 			if (!reader.PICC_IsNewCardPresent()) {
+				bool manualResetRequested = gRfidReinitRequested;
+				bool healthCheckDue = (millis() - lastHealthCheckTimestamp) >= healthCheckIntervalMs;
+				if (manualResetRequested || healthCheckDue) {
+					lastHealthCheckTimestamp = millis();
+					gRfidReinitRequested = false;
+					byte version = reader.PCD_ReadRegister(Reader::VersionReg);
+					if (manualResetRequested || !IsValidMfrc522Version(version)) {
+						Log_Printf(LOGLEVEL_ERROR, "RFID: %s (version=0x%02X), reinitializing reader...",
+							manualResetRequested ? "manual reset requested" : "reader unresponsive", version);
+						RfidMfrc522_Reinit(reader);
+						byte newVersion = reader.PCD_ReadRegister(Reader::VersionReg);
+						if (IsValidMfrc522Version(newVersion)) {
+							Log_Println("RFID: reader recovered", LOGLEVEL_NOTICE);
+						} else {
+							Log_Println("RFID: reader still unresponsive after reinit", LOGLEVEL_ERROR);
+						}
+					}
+				}
 				continue;
 			}
 

@@ -64,7 +64,14 @@ struct AnimationReturnType {
 	#define LED_BRIGHTNESS_MIN			 1u // Never let a gesture turn the LEDs fully off -- that looks like a crash
 	#define LED_INITIAL_NIGHT_BRIGHTNESS 2u
 
-	#define FASTLED_ESP32_USE_CLOCKLESS_SPI 1
+	// Force the SPI-bitbang WS2812 backend on classic ESP32 (kept for whatever compatibility
+	// reason motivated it originally). ESP32-S3 has 4 RMT TX channels to spare and RMT tolerates
+	// WiFi-induced interrupt latency far better than this SPI/DMA path's completion-wait does, so
+	// let FastLED fall back to its recommended default (RMT) there instead.
+	#include "sdkconfig.h"
+	#ifndef CONFIG_IDF_TARGET_ESP32S3
+		#define FASTLED_ESP32_USE_CLOCKLESS_SPI 1
+	#endif
 
 	#include <FastLED.h>
 

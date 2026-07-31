@@ -55,10 +55,21 @@ RfidReaderType RfidConfig_GetReaderType(void) {
 // Auto-detect the RFID reader type
 RfidReaderType RfidConfig_AutoDetectReader(void) {
 	// start with the most common reader (PN5180) and then check for MFRC522 variants.
+#if RFID_BUSY != 99
+	// RFID_BUSY == 99 is this codebase's "not wired" sentinel (see e.g. IRLED_PIN,
+	// ROTARYENCODER_BUTTON). Probing for a PN5180 here means constructing a PN5180 object on
+	// RFID_CS/RFID_RST and pulsing/reading those pins -- on HALs like settings-custom.h where no
+	// PN5180 exists and RFID_RST happens to alias the real MFRC522's RST_PIN, that probe directly
+	// interferes with the actual MFRC522 (spurious reset pulses + garbage PN5180-protocol SPI
+	// bytes on its CS line), which was the root cause of an intermittent "reader dead until
+	// reboot" bug. Skip the probe entirely when RFID_BUSY signals no PN5180 is present.
 	if (RfidConfig_IsReaderAvailable(RfidReaderType::TYPE_PN5180)) {
 		Log_Println("RFID: PN5180 reader detected", LOGLEVEL_INFO);
 		return RfidReaderType::TYPE_PN5180;
 	}
+#else
+	Log_Println("RFID: Skipping PN5180 probe (RFID_BUSY=99, not wired)", LOGLEVEL_DEBUG);
+#endif
 
 	if (RfidConfig_IsReaderAvailable(RfidReaderType::TYPE_MFRC522_SPI)) {
 		Log_Println("RFID: MFRC522 (SPI) reader detected", LOGLEVEL_INFO);

@@ -4,6 +4,7 @@
 #include "AudioPlayer.h"
 
 #include "Audio.h"
+#include "Battery.h"
 #include "Bluetooth.h"
 #include "Cmd.h"
 #include "Common.h"
@@ -733,6 +734,27 @@ void AudioPlayer_HeadphoneVolumeManager(void) {
 #endif
 }
 
+#ifdef BATTERY_MEASURE_ENABLE
+// Speaks the current battery charge/voltage; isLowWarning switches to the "battery low" phrasing
+// used for the automatic low-battery announcement (vs. the plain on-demand reading).
+static bool AudioPlayer_SpeakBatteryStatus(bool isLowWarning) {
+	static char battStringBuff[64];
+	uint8_t chargeLevel = (uint8_t) roundf(Battery_EstimateLevel() * 100);
+	float voltage = Battery_GetVoltage();
+	switch (LANGUAGE) {
+		case DE:
+			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Akku schwach: %u Prozent, %.2f Volt" : "Akkustand: %u Prozent, %.2f Volt", chargeLevel, voltage);
+			return audio->connecttospeech(battStringBuff, "de");
+		case FR:
+			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batterie faible : %u pourcent, %.2f volts" : "Niveau de batterie : %u pourcent, %.2f volts", chargeLevel, voltage);
+			return audio->connecttospeech(battStringBuff, "fr");
+		default:
+			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Battery low: %u percent, %.2f volts" : "Battery level: %u percent, %.2f volts", chargeLevel, voltage);
+			return audio->connecttospeech(battStringBuff, "en");
+	}
+}
+#endif
+
 // Function to play music as task
 void AudioPlayer_Loop() {
 	// Update playtime stats every 250 ms
@@ -1249,6 +1271,17 @@ void AudioPlayer_Loop() {
 		if (!speechOk) {
 			System_IndicateError();
 		}
+	}
+
+	// Handle battery-level-announcement (on-demand reading and automatic low-battery warning)
+	if (gPlayProperties.tellMode == TTS_BATTERY_LEVEL || gPlayProperties.tellMode == TTS_BATTERY_LOW) {
+		const bool isLowWarning = (gPlayProperties.tellMode == TTS_BATTERY_LOW);
+		gPlayProperties.tellMode = TTS_NONE;
+#ifdef BATTERY_MEASURE_ENABLE
+		if (!AudioPlayer_SpeakBatteryStatus(isLowWarning)) {
+			System_IndicateError();
+		}
+#endif
 	}
 
 	// If speech is over, go back to predefined state

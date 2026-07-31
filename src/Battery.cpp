@@ -3,12 +3,14 @@
 
 #include "Battery.h"
 
+#include "AudioPlayer.h"
 #include "Led.h"
 #include "Log.h"
 #include "Mqtt.h"
 #include "Power.h"
 #include "Rfid.h"
 #include "System.h"
+#include "Wlan.h"
 
 #ifdef BATTERY_MEASURE_ENABLE
 uint8_t batteryCheckInterval = s_batteryCheckInterval;
@@ -45,6 +47,7 @@ void Battery_Init(void) {
 // Measures battery as per interval or after bootup (after allowing a few seconds to settle down)
 void Battery_Cyclic(void) {
 	static uint32_t lastBatteryCheckTimestamp = 0;
+	static bool lowBatteryAnnounced = false; // Edge-triggered: announce once per low-battery episode, not every check
 	if (batteryCheckInterval > 0 && ((millis() - lastBatteryCheckTimestamp >= batteryCheckInterval * 60000) || (!lastBatteryCheckTimestamp && millis() >= 10000))) {
 		Battery_CyclicInner();
 		Battery_PublishMQTT();
@@ -53,6 +56,14 @@ void Battery_Cyclic(void) {
 		if (Battery_IsLow()) {
 			Log_Println(batteryLowMsg, LOGLEVEL_ERROR);
 			Led_Indicate(LedIndicatorType::VoltageWarning);
+			if (!lowBatteryAnnounced && Wlan_IsConnected()) {
+				gPlayProperties.tellMode = TTS_BATTERY_LOW;
+				gPlayProperties.currentSpeechActive = true;
+				gPlayProperties.lastSpeechActive = true;
+			}
+			lowBatteryAnnounced = true;
+		} else {
+			lowBatteryAnnounced = false;
 		}
 
 	#ifdef SHUTDOWN_ON_BAT_CRITICAL

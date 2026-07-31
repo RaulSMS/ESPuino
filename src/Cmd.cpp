@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "Mqtt.h"
 #include "Queues.h"
+#include "Rfid.h"
 #include "System.h"
 #include "Wlan.h"
 
@@ -255,6 +256,11 @@ void Cmd_Action(const uint16_t mod) {
 		}
 #endif
 
+		case CMD_RESET_RFID_READER: {
+			Rfid_ResetReader();
+			break;
+		}
+
 		case CMD_TELL_IP_ADDRESS: {
 			if (Wlan_IsConnected()) {
 				gPlayProperties.tellMode = TTS_IP_ADDRESS;
@@ -278,6 +284,24 @@ void Cmd_Action(const uint16_t mod) {
 				Log_Println(unableToTellTime, LOGLEVEL_ERROR);
 				System_IndicateError();
 			}
+			break;
+		}
+
+		case CMD_TELL_BATTERY_LEVEL: {
+#ifdef BATTERY_MEASURE_ENABLE
+			if (Wlan_IsConnected()) {
+				gPlayProperties.tellMode = TTS_BATTERY_LEVEL;
+				gPlayProperties.currentSpeechActive = true;
+				gPlayProperties.lastSpeechActive = true;
+				System_IndicateOk();
+			} else {
+				Log_Println(unableToTellBatteryLevel, LOGLEVEL_ERROR);
+				System_IndicateError();
+			}
+#else
+			Log_Println(unableToTellBatteryLevel, LOGLEVEL_ERROR);
+			System_IndicateError();
+#endif
 			break;
 		}
 
