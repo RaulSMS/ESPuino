@@ -212,3 +212,79 @@ falling back to `malloc`; use it for larger heap containers (playlists) rather t
 allocators. FTP is disabled by default after each boot specifically to keep heap free for webstream
 buffering — see the `ENABLE_FTP_SERVER` command / FTP section in `README.md` before changing that
 behavior.
+
+The PSRAM-first policy above is aspirational, not fully enforced: `src/Web.cpp`'s `SpiRamAllocator`
+(the `ArduinoJson` allocator backing most REST endpoints) is applied inconsistently — e.g.
+`tagIdToJsonStr()` and `handleBluetoothResultsRequest()` construct a bare `JsonDocument` with no
+allocator at all, so those specific responses build on the small internal heap despite being sized by
+NVS/scan content. Also, `Playlist.h`'s `allocatePlaylist()`/`freePlaylist()` pair mismatches allocator
+and deallocator on the non-PSRAM fallback path (`new Playlist()` freed via `free()`, not `delete`) —
+undefined behavior per the standard even though it currently works with this toolchain. See
+[raulsms/espuino#6](https://github.com/RaulSMS/ESPuino/issues/6) before assuming every `JsonDocument`
+or `Playlist` allocation in this codebase is already PSRAM-safe; check the specific call site.
+
+## Known reliability / memory-safety gaps (from an architecture review, Aug 2026)
+
+A full-codebase review turned up several concrete, unfixed issues worth knowing about before touching
+the related code — filed as GitHub issues on this repo (`RaulSMS/ESPuino#3`–`#7`) rather than fixed
+inline, since fixing them wasn't in scope for that pass. Highlights, in case an issue gets closed/stale
+and this context needs to survive independently:
+
+- **`RfidCommon.cpp`'s file/URL parsing can produce an unterminated stack buffer.** `char _file[255]`
+  is filled via `strncpy(_file, token, sizeof(_file) / sizeof(_file[0]))` — using the *full* buffer
+  size instead of `sizeof(_file) - 1`, so a 255+ character path/URL (valid input — the web UI's source
+  buffer is 275 bytes, `Web.cpp:1046`) leaves `_file` unterminated before it's used as a C-string in
+  `AudioPlayer_SetPlaylist()`. `Web.cpp:2500`'s `tagIdToJSON()` parses the identical data correctly
+  (zero-initialized, `sizeof(_file) - 1`) — that's the pattern to copy. (#3)
+- **MFRC522's "don't accept the same RFID tag twice" is silently broken**: `RfidMfrc522.cpp` declares
+  `byte lastValidcardId[cardIdSize]` *inside* the reader task's `for (;;)` loop, so it never persists
+  across polls and the duplicate-tag comparison is always against garbage. `RfidPn5180.cpp` declares
+  the equivalent variable outside the loop correctly — that's the reference implementation. (#4)
+- **`gPlayProperties` (the core playback-state struct) is mutated from the RFID reader tasks and read
+  from `AudioPlayer_Cyclic()` in the main loop with no mutex/atomics** — a plausible source of
+  intermittent, long-uptime-only crashes via torn reads (e.g. an index read against one playlist size,
+  checked against an already-swapped playlist pointer). (#4)
+- **Several hardware paths have no timeout/recovery and can hang the device forever**, requiring a
+  physical power cycle: `SdCard_Init()`'s SD-mount loop retries unbounded unless
+  `SHUTDOWN_IF_SD_BOOT_FAILS` is set; `Port.cpp`'s I2C transactions to the port expander have no
+  timeout and no bus-recovery on failure, and since `Port_Cyclic()` runs every main-loop iteration a
+  wedged I2C bus can stall RFID/LED/web-server handling simultaneously; `Bluetooth_Init()` has a bare
+  `while (1);` spin on I2S init failure with no watchdog-safe fallback. (#5)
+- **Concurrent unsynchronized SD-card filesystem access**: the web file-explorer's delete/create/rename
+  handlers (`Web.cpp`) call `gFSystem.remove/rmdir/mkdir` directly from the AsyncWebServer task while
+  `AudioPlayer_Cyclic()` concurrently reads the same card from the main loop task — only the raw-upload
+  path is guarded via `System_PauseTasksDuringUpload()`; delete/create/rename aren't.
+
+## Build performance & binary-size notes
+
+`sdkconfig.defaults` already sets `CONFIG_COMPILER_OPTIMIZATION_SIZE=y` (`-Os`) and `platformio.ini`
+sets `-DCORE_DEBUG_LEVEL=0` — don't casually change either without checking the size impact. Beyond
+that baseline, a few things are worth knowing if asked to reduce compile time or flash usage:
+
+- `CONFIG_ESP_WIFI_CSI_ENABLED=y` and `CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y` in
+  `sdkconfig.defaults` are enabled but nothing under `src/` references CSI or FreeRTOS runtime-stats
+  APIs (grepped and confirmed) — they look like leftover debug config, not something the app depends
+  on. Likely safe to disable for a size/CPU-overhead win, but verify no library pulls them in
+  transitively before flipping them.
+- `platformio.ini`'s `board_build.embed_txtfiles` embeds `esp_insights`/`esp_rainmaker` server certs,
+  which implies those Espressif managed components get built in via the `arduino-esp32` 3.x IDF
+  component manifest even though nothing in `src/` calls into either SDK. This is unconfirmed (would
+  need a from-scratch build + map-file diff to quantify), but is the most promising binary-size lead
+  turned up so far — check whether they can be dropped via the component manager's exclude mechanism.
+- `CONFIG_BT_SPP_ENABLED=y` is set but `BluetoothSerial`/SPP isn't used anywhere in `src/`; worth
+  checking whether `ESP32-A2DP` needs it transitively before dropping it.
+- No `-flto` in `build_flags`. Untried here, but cross-TU dead-code elimination under `-Os` often buys
+  a further few percent on ESP32 — costs link time, so weigh against the point below.
+- CI (`.github/workflows/firmware-builds.yml`) builds 3 envs × 3 languages = 9 full cold builds with no
+  `ccache`/`sccache` configured anywhere. Since the three language variants differ only in the
+  `LogMessages_{DE,EN,FR}.cpp` translation units selected by the `LANGUAGE` define, a shared ccache
+  directory across those jobs (restored via `actions/cache`, keyed on toolchain+flags) would likely
+  turn most repeated-language rebuilds into cache hits — probably the highest-leverage CI-time win
+  available, and lower-risk than touching sdkconfig feature flags.
+- The pinned git-fork dependencies in `lib_deps` (`ESP32-audioI2S`, `ESP-FTP-Server-Lib`,
+  `PN5180-Library`, `rfid.git`, `natsort.git`, `LogRingBuffer`) each carry an inline comment explaining
+  why they're forked (warning fixes, timeout tuning, etc.) rather than pointing at upstream — this
+  isn't a compile-time problem, but periodically diffing against upstream and upstreaming the fixes
+  (where upstream is still maintained) would reduce the long-term burden of tracking forked commits.
+  `ArduinoJson` (v7.4.3) and `ESPAsyncWebServer` (the actively-maintained `ESP32Async` fork) are
+  already reasonably current and don't need this treatment.
