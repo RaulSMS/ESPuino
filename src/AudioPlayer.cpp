@@ -743,19 +743,19 @@ static bool AudioPlayer_SpeakBatteryStatus(bool isLowWarning) {
 	float voltage = Battery_GetVoltage();
 	// DE/FR branches compile automatically when LANGUAGE (settings-override.h) is set to DE/FR —
 	// nothing to uncomment here, unlike the web-UI locale toggle (see AGENTS.md "Language support").
-#if (LANGUAGE == DE)
+	#if (LANGUAGE == DE)
 	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Akku schwach: %u Prozent, %.2f Volt" : "Akkustand: %u Prozent, %.2f Volt", chargeLevel, voltage);
 	return audio->connecttospeech(battStringBuff, "de");
-#elif (LANGUAGE == FR)
+	#elif (LANGUAGE == FR)
 	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batterie faible : %u pourcent, %.2f volts" : "Niveau de batterie : %u pourcent, %.2f volts", chargeLevel, voltage);
 	return audio->connecttospeech(battStringBuff, "fr");
-#elif (LANGUAGE == ES)
+	#elif (LANGUAGE == ES)
 	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batería baja: %u por ciento, %.2f voltios" : "Nivel de batería: %u por ciento, %.2f voltios", chargeLevel, voltage);
 	return audio->connecttospeech(battStringBuff, "es");
-#else
+	#else
 	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Battery low: %u percent, %.2f volts" : "Battery level: %u percent, %.2f volts", chargeLevel, voltage);
 	return audio->connecttospeech(battStringBuff, "en");
-#endif
+	#endif
 }
 #endif
 
