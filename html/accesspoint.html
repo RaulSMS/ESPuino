@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="es">
 
 <head>
 	<title data-i18n="wifi.title"></title>
@@ -84,10 +84,12 @@
 	<form id="settings" action="#wifiConfig" class="box" method="POST" onsubmit="wifiConfig(); return false">
 		<div style="text-align:right">
 			<select id="langSel" style="width:auto;height:28px;margin:0;padding:0 5px;font-size:13px">
-				<option value="de">Deutsch</option>
 				<option value="en">English</option>
-				<option value="fr">Français</option>
 				<option value="es">Español</option>
+				<!-- DE/FR disabled by default. To re-enable: uncomment the two lines below AND
+				     the matching locales/{de,fr}.json entries in processHtml.py's BINARY_FILES. -->
+				<!-- <option value="de">Deutsch</option> -->
+				<!-- <option value="fr">Français</option> -->
 			</select>
 		</div>
 		<h1 data-i18n="wifi.title"></h1>

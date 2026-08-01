@@ -210,8 +210,38 @@ outside this repo, not in `src/`.
 `html/` holds the static web UI (`management.html`, `accesspoint.html` + JS/CSS) served by `Web.cpp`'s
 async webserver; `processHtml.py` (a `pre:` extra_script in `platformio.ini`) processes/embeds these at
 build time. Localization is client-side `i18next` with per-locale JSON in `html/locales/`
-(`de.json`, `en.json`, `fr.json`, `es.json`); language is auto-detected from `navigator.language`, user override
-persisted in `localStorage`. The REST API surface is specified in `REST-API.yaml`.
+(`de.json`, `en.json`, `fr.json`, `es.json` all exist on disk, but by default only `en.json`/`es.json`
+are actually embedded into the firmware — see "Language support" below); language is auto-detected from
+`navigator.language`, user override persisted in `localStorage`. The REST API surface is specified in
+`REST-API.yaml`.
+
+### Language support: compile-time `LANGUAGE` vs. the web-UI locale set
+
+There are two independent, differently-scoped language mechanisms in this codebase — don't confuse
+them when asked to add/restrict a language:
+
+1. **Compile-time `LANGUAGE`** (`settings-override.h`, see "Configuration / HAL layering" above) picks
+   exactly one language for logs (`LogMessages_{DE,EN,FR,ES}.cpp`, each file's entire body wrapped in
+   `#if (LANGUAGE == XX) ... #endif`) and spoken TTS announcements (the `#if (LANGUAGE == DE) #elif
+   (LANGUAGE == FR) #elif (LANGUAGE == ES) #else` chains in `AudioPlayer.cpp`'s
+   `AudioPlayer_SpeakBatteryStatus()`, the `TTS_IP_ADDRESS` handler, and the `TTS_CURRENT_TIME`
+   handler). All four languages (DE/EN/FR/ES) are always *available* here — nothing to uncomment,
+   changing `LANGUAGE` in `settings-override.h` to `DE` or `FR` is enough, and the unselected
+   languages' string literals simply don't get compiled in (near-zero flash cost either way, since it's
+   all `#if`-guarded already).
+2. **Web-UI locale set** (`html/locales/*.json` + the `#langSel` `<select>` in `accesspoint.html` and
+   `management.html`) is i18next's runtime language switcher in the browser — independent of
+   `LANGUAGE`, and capable of offering multiple languages simultaneously. This fork restricts it to
+   `en`/`es` by default (to keep embedded-asset flash usage down): `processHtml.py`'s `BINARY_FILES`
+   list only embeds `locales/en.json` and `locales/es.json` (the `de.json`/`fr.json` entries are present
+   but commented out), and both HTML files' `#langSel` dropdowns only list `en`/`es` (`de`/`fr` options
+   present but commented out, right next to the active ones). **To re-enable DE and/or FR in the web
+   UI**, uncomment the matching `Path("locales/de.json")`/`Path("locales/fr.json")` line(s) in
+   `processHtml.py` *and* the matching `<option value="de">`/`<option value="fr">` line(s) in *both*
+   `accesspoint.html` and `management.html` — all three spots must move together, or the dropdown will
+   offer a language whose JSON was never embedded (404 → i18next silently falls back to `fallbackLng:
+   'en'`, which is exactly the "TTS speaks Spanish but the UI stays English" symptom this restriction
+   was born from when `es.json` itself was missing from `BINARY_FILES`).
 
 ### Filesystem access
 
