@@ -27,7 +27,7 @@
 	#define FTP_ENABLE                      // Enables FTP server
 	#define NEOPIXEL_ENABLE                 // Enable Neopixel RGB LED support
 	//#define NEOPIXEL_REVERSE_ROTATION     // Some Neopixels are addressed/soldered counter-clockwise
-	#define LANGUAGE EN                     // EN = english; DE = deutsch
+	#define LANGUAGE ES                     // DE = deutsch; EN = english; FR = french; ES = spanish
 	//#define STATIC_IP_ENABLE              // DEPRECATED: static IP
 	//#define HEADPHONE_ADJUST_ENABLE       // Headphone detection disabled (HP_DETECT=99 in custom HAL)
 	//#define PLAY_MONO_SPEAKER
