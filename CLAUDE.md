@@ -14,6 +14,14 @@ clang-format check, and manual on-device testing.
 A `GEMINI.md` file in the repo root duplicates/overlaps parts of this file for another assistant;
 keep the two in sync if you edit one and the other should still apply.
 
+## Communication standard
+
+All documentation (this file, `GEMINI.md`, `FirstSteps.md`, implementation plans, walkthroughs), code
+comments, commit messages, and assistant responses must be written in English, unless the user
+explicitly asks for another language for a specific piece of output. This doesn't apply to
+intentionally-localized content that's non-English by design — `LogMessages_{DE,EN,FR}.cpp` and
+`html/locales/*.json` are supposed to contain German/French strings.
+
 ## Build / lint commands
 
 This is a PlatformIO project — there is no plain `make`/`npm`. Common commands (run from repo root):
@@ -95,15 +103,22 @@ Configuration is a layered `#include` chain rooted at `src/settings.h`:
 1. `settings.h` — feature toggles (`NEOPIXEL_ENABLE`, `MQTT_ENABLE`, `FTP_ENABLE`, `BLUETOOTH_ENABLE`,
    `PORT_EXPANDER_ENABLE`, ...), button-to-command mapping, `LANGUAGE` define, and (near the bottom) an
    `#if (HAL == N)` chain that pulls in the matching board file.
-2. If `settings-override.h` exists (gitignored, copy from `settings-override.h.sample`), it's included
-   *instead of* the rest of `settings.h`'s defaults — this is the supported way to fully customize
-   without touching tracked files.
+2. If `settings-override.h` exists, it's included *instead of* the rest of `settings.h`'s defaults —
+   the supported way to fully customize without touching tracked files. Upstream ESPuino gitignores
+   this file (copy from `settings-override.h.sample`); **this fork tracks it in git instead**
+   (`.gitignore` only excludes `platformio-override.ini`, not this file) — `src/settings-override.h`
+   is a complete customized copy of `settings.h` (feature toggles, `LANGUAGE`, battery thresholds,
+   `HAL` hardcoded to `99`) and *is* the live config for every build here, not an optional layer. Edit
+   it directly for toggles/thresholds; it still ends in the same `#if (HAL == N)` chain as `settings.h`
+   and includes `settings-custom.h` for HAL 99, so pin assignments still live there (see step 3).
 3. Board/HAL files (selected by `-DHAL=N` build flag per PlatformIO environment): `settings-lolin_d32_pro.h`
    (HAL 4), `settings-ttgo_t8.h` (HAL 5), `settings-complete.h` (HAL 6),
    `settings-lolin_d32_pro_sdmmc_pe.h` (HAL 7), `settings-custom.h` (HAL 99, for boards not in the list —
    this repo's active environments, `esp32-s3-devkitc-1` and `esp32-wrover-devkitc-v4-8mb`, both use
    HAL 99). These files define pinouts: I2S DAC pins, SPI/SDMMC SD pins, RFID reader pins, Neopixel pin
-   + count, rotary encoder pins, button GPIOs, power control pins.
+   + count, rotary encoder pins, button GPIOs, power control pins. `PORT_EXPANDER_ENABLE` is
+   auto-forced on only for HAL 6/7 (`settings.h`, mandatory there since PCA9555 is part of those
+   boards); leave it undefined for HAL 99 setups without a port expander.
 
 Numeric command codes (button actions, modification-card actions, playlist/playback modes, operation
 modes) are all centralized in `src/values.h` and dispatched through `Cmd.cpp`. Adding a new command
@@ -203,6 +218,46 @@ persisted in `localStorage`. The REST API surface is specified in `REST-API.yaml
 `SanitizedFS` (`src/FileSystem.h`) wraps `fs::FS` to sanitize/reparse paths — SD card file access
 should generally go through this wrapper rather than calling the underlying FS APIs directly, since
 path sanitization matters for both correctness (SD.begin quirks) and security (FTP/web upload paths).
+
+### Battery monitoring & the ESP32-S3 ADC constraint
+
+`MEASURE_BATTERY_VOLTAGE` (`src/BatteryMeasureVoltage.cpp`) reads `VOLTAGE_READ_PIN` through a
+resistor voltage-divider (`rdiv1`/`rdiv2`, in kΩ) with `inputAttenuation` (typically `ADC_11db`,
+~0-2.5V usable range at the pin). On ESP32-S3 only `GPIO1-10` are ADC1 pins; `GPIO11-20` are ADC2
+(unusable together with WiFi, since the driver shares the radio), and no other GPIO has any ADC
+channel at all. Picking a `VOLTAGE_READ_PIN` outside `GPIO1-10` doesn't just read garbage — the
+Arduino core's `adc_oneshot_io_to_channel()` call isn't error-checked, so it indexes an internal
+handle array with an uninitialized `adc_unit` and crashes with `Guru Meditation Error:
+LoadProhibited`. Always verify a proposed analog-input pin against that range before wiring it on an
+S3 board (this repo's HAL 99 config uses GPIO9/`ADC1_CH8`, which is safe).
+
+Threshold constants (`s_warningLowVoltage`, `s_warningCriticalVoltage`, `s_voltageIndicatorLow`,
+`s_voltageIndicatorHigh`) only **seed NVS on first boot** — `Battery_InitInner()` reads NVS first and
+falls back to these only if nothing is stored yet. Editing them later does nothing on a device that's
+already booted once; change the values via the Web UI's battery-settings tab instead, or erase NVS to
+re-seed.
+
+`CMD_MEASUREBATTERY` (178) does an on-demand measurement (log + MQTT + LED flash, no speech).
+`CMD_TELL_BATTERY_LEVEL` (157) additionally speaks the level via TTS (see below). Both are already
+wired into `management.html`'s `cmds`/`mods` arrays — a working reference for the general pattern in
+"Adding a new command" above, if adding another battery-related action.
+
+Low-battery speech (`Battery_Cyclic()` in `src/Battery.cpp`) is edge-triggered (announces once per
+low-battery episode via a `static bool` latch), unlike the LED/log warning which repeats every check
+interval — a short check interval (the Web UI allows down to 1 minute) would otherwise make
+every-cycle speech extremely naggy.
+
+### Text-to-speech (TTS) announcements
+
+`gPlayProperties.tellMode` (a 3-bit field in `src/AudioPlayer.h` — so at most 8 `TTS_*` values from
+`src/values.h` before it needs widening) drives one-shot spoken announcements, consumed once per
+`AudioPlayer_Loop()` iteration via the audio library's `connecttospeech(text, langCode)` — an
+**online** TTS engine, so every announcement needs an active WiFi connection and silently no-ops (with
+an error log) otherwise. Existing uses: IP address, current time, on-demand battery level, and the
+automatic low-battery warning. Setting `tellMode` plus `currentSpeechActive`/`lastSpeechActive = true`
+from anywhere in the cooperative main loop (not just `Cmd_Action()` — `Battery_Cyclic()` does it for
+the low-battery warning) queues the announcement; it interrupts current playback and resumes the
+previous RFID tag afterwards automatically.
 
 ### Memory constraints
 

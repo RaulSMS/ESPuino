@@ -11,7 +11,9 @@ ESPuino is an ESP32-based RFID audio player designed as an open-source alternati
 - **Configuration Structure**:
   - `platformio.ini`: Defines build environments, platform parameters, flash partition schemes (`custom_16mb_ota.csv`, `custom_4mb_noota.csv`), and `HAL` defines.
   - `settings.h`: Global configuration, module toggles (`NEOPIXEL_ENABLE`, `MQTT_ENABLE`, `FTP_ENABLE`, `BLUETOOTH_ENABLE`, `PORT_EXPANDER_ENABLE`), button mapping to commands, and includes board-specific HAL configs.
-  - `settings-override.h`: If present, overrides `settings.h` defaults.
+  - `settings-override.h`: If present, overrides `settings.h` defaults. Upstream ESPuino gitignores
+    this file; **this fork tracks it in git instead** and it's the live HAL-99 config for every build
+    here — it still includes `settings-custom.h` at the bottom for pinouts, so board pins live there.
   - HAL header files (`settings-custom.h`, `settings-lolin_d32_pro.h`, `settings-lolin_d32_pro_sdmmc_pe.h`, `settings-complete.h`, `settings-ttgo_t8.h`): Specify board pinouts for SD Card, I2S DAC, SPI RFID, Rotary Encoder, Buttons, Neopixel, Power controls, etc.
 
 ## Hardware Abstraction Levels (HAL)
@@ -25,6 +27,10 @@ ESPuino is an ESP32-based RFID audio player designed as an open-source alternati
 1. **ESP32 Core / PSRAM**:
    - ESP32-S3 / ESP32 with PSRAM is recommended.
    - Strapping pins and input-only pins (GPIO 34-39 on classic ESP32) must be noted (GPIO 34-39 lack internal pull-ups).
+   - **ESP32-S3 ADC constraint**: only `GPIO1-10` are ADC1 pins; `GPIO11-20` are ADC2 (unusable with
+     WiFi active). Any other GPIO has no ADC channel at all, and using one for `VOLTAGE_READ_PIN` (or
+     any `analogRead()`) crashes with `Guru Meditation Error: LoadProhibited` rather than failing
+     gracefully — verify the pin is in `GPIO1-10` before wiring it.
 2. **Audio Subsystem (I2S)**:
    - DACs used: MAX98357A, PCM5102A, AC101, PT2811.
    - Standard I2S pins: `I2S_DOUT`, `I2S_BCLK`, `I2S_LRC`.
@@ -47,6 +53,14 @@ ESPuino is an ESP32-based RFID audio player designed as an open-source alternati
   - Automatically selects `navigator.language` on first visit (defaults/fallbacks to English `en`).
   - Users can switch language dynamically via the `#langSel` dropdown selector in the Web UI navigation header.
   - User selection is saved in browser `localStorage` (`language`) to persist preference across sessions.
+
+## Battery Monitoring & Text-to-Speech
+- Battery thresholds (`s_warningLowVoltage`, etc.) only seed NVS on first boot; edit them via the Web
+  UI's battery-settings tab afterwards, not by changing the header constants.
+- `CMD_MEASUREBATTERY` (178, log/MQTT/LED only) and `CMD_TELL_BATTERY_LEVEL` (157, adds speech) are the
+  two battery commands; both are already wired into `management.html`'s command dropdowns.
+- TTS announcements (`gPlayProperties.tellMode`, `src/AudioPlayer.cpp`'s `connecttospeech()`) require
+  an **active WiFi connection** — it's an online TTS engine and silently no-ops offline.
 
 ## Custom Configuration Workflow for User Hardware
 To configure ESPuino for custom hardware (e.g. ESP32-S3-DevKitC-1-N16R8, MAX98357 I2S, 12-bit WS2812B Neopixel ring, SPI SD card, no PCA9555):
