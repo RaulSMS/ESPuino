@@ -28,9 +28,10 @@
 	#define NEOPIXEL_ENABLE                 // Enable Neopixel RGB LED support
 	//#define NEOPIXEL_REVERSE_ROTATION     // Some Neopixels are addressed/soldered counter-clockwise
 	#define LANGUAGE ES                     // DE = deutsch; EN = english; FR = french; ES = spanish
-	                                         // Selects the compiled-in language for logs + spoken (TTS) announcements.
-	                                         // Web-UI translations are a separate, independent toggle — see
-	                                         // AGENTS.md "Language support" for how to re-enable DE/FR there too.
+	                                         // Selects the compiled-in language for logs + spoken (TTS) announcements
+	                                         // (default: ES). The web UI ships all four locales (~22 KB flash total
+	                                         // for DE+FR, see AGENTS.md "Language support") and picks its own
+	                                         // language independently, based on the browser.
 	//#define STATIC_IP_ENABLE              // DEPRECATED: static IP
 	//#define HEADPHONE_ADJUST_ENABLE       // Headphone detection disabled (HP_DETECT=99 in custom HAL)
 	//#define PLAY_MONO_SPEAKER

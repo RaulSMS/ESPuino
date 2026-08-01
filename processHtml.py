@@ -36,12 +36,8 @@ BINARY_FILES = [
     Path("js/loc_i18next.min.js"),
     Path("locales/en.json"),
     Path("locales/es.json"),
-    # DE/FR web-UI translations are disabled by default to keep the embedded-asset size down.
-    # To re-enable them: uncomment both lines below AND the matching <option value="de">/
-    # <option value="fr"> lines in the #langSel dropdown in both html/accesspoint.html and
-    # html/management.html (see AGENTS.md "Language support" section for details).
-    # Path("locales/de.json"),
-    # Path("locales/fr.json"),
+    Path("locales/de.json"),
+    Path("locales/fr.json"),
     # Vendored frontend libraries for the management interface (previously loaded from CDN).
     # Self-hosted so the management interface no longer depends on internet access.
     Path("vendor/bootstrap/bootstrap.min.css"),
