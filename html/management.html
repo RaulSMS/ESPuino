@@ -304,6 +304,7 @@
 										<option value="de">Deutsch</option>
 										<option value="en">English</option>
 										<option value="fr">Fran&ccedil;aise</option>
+										<option value="es">Espa&ntilde;ol</option>
 									</select>
 								</div>
 							</li>
@@ -2716,7 +2717,7 @@
 
 		async function checkGithubFirmwareBuilds() {
 			const branch = $('#githubBranchSel').val();
-			// firmware repo languages are DE/EN/FR, matching i18next's 2-letter codes
+			// firmware repo languages are DE/EN/FR/ES, matching i18next's 2-letter codes
 			const lang = (i18next.language || 'en').toUpperCase();
 			const path = `Firmwares/${branch}/${githubPlatform}/firmware-${lang}.bin`;
 			const list = $('#githubBuildList');

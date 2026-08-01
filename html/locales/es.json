@@ -1,0 +1,657 @@
+{
+	"restart": "Reiniciar",
+	"reset": "Restablecer",
+	"execute": "Ejecutar",
+	"title": "ESPuino",
+	"shutdown": "Apagar",
+	"log": "Registro",
+	"info": "Información",
+	"delete": "Eliminar",
+	"cancel": "Cancelar",
+	"refresh": "Actualizar",
+	"ok": "OK",
+	"infos": "Información",
+	"darkmode": "Modo oscuro",
+	"restartinfo": "ESPuino se está reiniciando...<br>La página se recargará automáticamente cuando finalice el reinicio.",
+	"shutdowninfo": "ESPuino se está apagando ahora...<br>La página se recargará automáticamente cuando ESPuino vuelva a encenderse.",
+	"toast": {
+		"rfidDetect": "Etiqueta RFID {{rfidId}} detectada.",
+		"success": "Acción realizada con éxito.",
+		"dropout": "flujo lento, pueden producirse interrupciones.",
+		"saved": "Configuración guardada.",
+		"ledCountRestart": "Se ha modificado el número de LEDs. ESPuino se reiniciará para aplicar este cambio."
+	},
+	"status": {
+		"connected": "Conexión con ESPuino: OK",
+		"disconnected": "Se perdió la conexión con ESPuino - intentando reconectar..."
+	},
+	"nav": {
+		"control": "Control",
+		"rfid": "RFID",
+		"wifi": "WiFi",
+		"mqtt": "MQTT",
+		"ftp": "FTP",
+		"bluetooth": "Bluetooth",
+		"general": "General",
+		"updates": "Actualizaciones",
+		"tools": "Herramientas",
+		"help": "Ayuda"
+	},
+	"settingsex": {
+		"led": {
+			"title": "Ajustes de LED",
+			"numindicator": "Número de LEDs indicadores",
+			"numcontrol": "Número de LEDs de control",
+			"controlled": "LEDs de control",
+			"numidledots": "Número de LEDs en estado de reposo",
+			"offsetpause": "LED de pausa centrado",
+			"huestart": "Inicio del color",
+			"hueend": "Fin del color",
+			"hueatmo": "Color de ambiente",
+			"satatmo": "Saturación de ambiente",
+			"dimmablestates": "Pasos de atenuación",
+			"reverserotation": "Invertir sentido de rotación",
+			"offset": "Desplazamiento inicial de LED",
+			"numindicatorExp": "Número de LEDs utilizados para la indicación de estado/progreso (por ejemplo, volumen, progreso de reproducción). Es necesario reiniciar para que el cambio surta efecto.",
+			"numcontrolExp": "Número de LEDs adicionales al final de la cadena, a cada uno de los cuales se le puede asignar su propio color libremente elegido. Es necesario reiniciar para que el cambio surta efecto.",
+			"numidledotsExp": "Número de puntos/LEDs que se muestran en reposo (sin reproducción activa).",
+			"huestartExp": "Tono (0-255) al inicio del indicador de progreso. -1 = usar el color predeterminado.",
+			"hueendExp": "Tono (0-255) al final del indicador de progreso. -1 = usar el color predeterminado.",
+			"hueatmoExp": "Tono (0-255) en modo de luz ambiental. -1 = usar el color predeterminado.",
+			"satatmoExp": "Saturación (0-255) en modo de luz ambiental. -1 = usar el valor predeterminado.",
+			"dimmablestatesExp": "Número de pasos intermedios por LED, usados para hacer las transiciones (por ejemplo, volumen o progreso) más suaves/finas.",
+			"offsetExp": "Desplaza el primer LED del indicador este número de posiciones - útil si el anillo de LEDs no debe comenzar en la posición 0.",
+			"offsetpauseExp": "Desplaza el indicador de pausa medio espacio de LED respecto al indicador de reposo normal, para distinguir visualmente la pausa del reposo.",
+			"reverserotationExp": "Invierte el sentido de desplazamiento del indicador LED, por ejemplo, para anillos montados en sentido antihorario en lugar de horario."
+		},
+		"buttons": {
+			"title": "Asignación de botones",
+			"titleExp": "Asigna a cada botón una acción para pulsación corta y otra para pulsación larga.",
+			"short": "pulsación corta",
+			"long": "pulsación larga",
+			"noaction": "--",
+			"button0": "Botón Siguiente (Btn0)",
+			"button1": "Botón Anterior (Btn1)",
+			"button2": "Botón Reproducir/Pausa (Btn2)",
+			"button3": "Botón Codificador rotativo (Btn3)",
+			"button4": "Botón Btn4",
+			"button5": "Botón Btn5"
+		},
+		"multibuttons": {
+			"title": "Asignación de combinaciones de botones",
+			"titleExp": "Activa una acción cuando se pulsan dos botones al mismo tiempo.",
+			"01": "0+1 (Siguiente + Anterior)",
+			"02": "0+2 (Siguiente + Reproducir/Pausa)",
+			"03": "0+3 (Siguiente + Codificador rotativo)",
+			"04": "0+4 (Siguiente + Btn4)",
+			"05": "0+5 (Siguiente + Btn5)",
+			"12": "1+2 (Anterior + Reproducir/Pausa)",
+			"13": "1+3 (Anterior + Codificador rotativo)",
+			"14": "1+4 (Anterior + Btn4)",
+			"15": "1+5 (Anterior + Btn5)",
+			"23": "2+3 (Reproducir/Pausa + Codificador rotativo)",
+			"24": "2+4 (Reproducir/Pausa + Btn4)",
+			"25": "2+5 (Reproducir/Pausa + Btn5)",
+			"34": "3+4 (Codificador rotativo + Btn4)",
+			"35": "3+5 (Codificador rotativo + Btn5)",
+			"45": "4+5 (Btn4 + Btn5)"
+		},
+		"rotary": {
+			"title": "Codificador rotativo",
+			"reverse": "Invertir sentido de rotación",
+			"reverseExp": "Invierte el sentido de conteo/rotación del codificador rotativo, por ejemplo, si subir/bajar volumen está invertido.",
+			"gestures": "Botón mantenido + rotación",
+			"gesturesExp": "Mientras se mantenga pulsado uno de estos botones, girar el codificador rotativo activa la acción asignada en lugar de cambiar el volumen. \"Girar a la derecha\" es el sentido que aumenta el volumen. La pulsación larga de dicho botón solo se activa al soltarlo - y no se activa en absoluto si se giró el codificador.",
+			"ccw": "girar a la izquierda",
+			"cw": "girar a la derecha",
+			"seekPreviewTitle": "Ajustes de vista previa de búsqueda",
+			"seekPreviewTitleExp": "Ajustes finos para el gesto 🎯 de vista previa de búsqueda (ver tabla arriba): cuánto tiempo esperar antes de que una vista previa se confirme automáticamente y con qué precisión se puede ajustar la posición objetivo girando.",
+			"seekPrevDelay": "Retardo antes de confirmar [ms]",
+			"seekPrevDelayExp": "Tiempo (en ms) que el codificador debe permanecer inmóvil antes de que un gesto 🎯 de vista previa de búsqueda salte automáticamente a la posición previsualizada. Soltar el botón mantenido siempre confirma de inmediato, independientemente de este retardo. 0-3000, por defecto 2000.",
+			"seekPrevSweep": "Muescas para un barrido completo",
+			"seekPrevSweepExp": "Número de muescas del codificador necesarias para mover el objetivo de la vista previa de búsqueda de 0% a 100% (LED azul) de la pista. Menor = desplazamiento más grueso/rápido, mayor = control más fino. Por defecto 40."
+		}
+	},
+	"wifi": {
+		"title": "Configuración WiFi",
+		"saveButton": "Guardar configuración WiFi",
+		"addNetworkButton": "Añadir red",
+		"networks": "Redes",
+		"savedNetworks": "Redes guardadas",
+		"ssid": {
+			"title": "Nombre del WiFi (SSID)",
+			"placeholder": "SSID",
+			"validation": "Introduzca el SSID del WiFi",
+			"explanation": "Nombre de la red WiFi a la que debe conectarse ESPuino."
+		},
+		"password": {
+			"title": "Contraseña",
+			"placeholder": "Contraseña",
+			"validation": "Introduzca la contraseña del WiFi",
+			"explanation": "Contraseña de la red WiFi a la que debe conectarse ESPuino."
+		},
+		"hostname": {
+			"title": "Nombre de ESPuino (nombre de host)",
+			"placeholder": "espuino",
+			"validation": "Introduzca un nombre de host válido",
+			"explanation": "Este es el nombre de su ESPuino tal como aparece en su red."
+		},
+		"apSSID": {
+			"title": "Nombre del punto de acceso de ESPuino",
+			"placeholder": "ESPuino",
+			"explanation": "Nombre de la red WiFi que ESPuino abre cuando aún no se ha configurado ningún WiFi, o cuando ningún WiFi configurado está al alcance."
+		},
+		"apPassword": {
+			"title": "Contraseña del punto de acceso de ESPuino",
+			"placeholder": "Contraseña",
+			"explanation": "Contraseña de la red WiFi que ESPuino abre cuando aún no se ha configurado ningún WiFi, o cuando ningún WiFi configurado está al alcance."
+		},
+		"apTimeout": {
+			"title": "El punto de acceso se cierra después de (minutos)",
+			"hint": "0 = el punto de acceso nunca se cierra automáticamente (¡brecha de seguridad!)",
+			"explanation": "Tiempo en minutos durante el cual permanece abierta la red WiFi que ESPuino abre (cuando aún no se ha configurado ningún WiFi, o cuando ningún WiFi configurado está al alcance)."
+		},
+		"static": {
+			"addr": "Dirección IP estática",
+			"enabled": "Configuración IP estática",
+			"gateway": "Puerta de enlace para la configuración IP estática",
+			"subnet": "Máscara de subred para la configuración IP estática",
+			"dns1": "DNS 1 para la configuración IP estática",
+			"dns2": "DNS 2 para la configuración IP estática",
+			"explanation": "La configuración IP se realiza manualmente en lugar de mediante un servidor DHCP. Atención: debe saber qué introducir aquí, de lo contrario su ESPuino podría dejar de ser accesible en la red.",
+			"addrExp": "Dirección IPv4 fija para ESPuino en la red WiFi (solo tiene efecto si la configuración IP estática está activada).",
+			"gatewayExp": "Dirección IP de la puerta de enlace/router para la configuración IP estática.",
+			"subnetExp": "Máscara de subred para la configuración IP estática, por ejemplo, 255.255.255.0.",
+			"dns1Exp": "Servidor DNS preferido para la configuración IP estática.",
+			"dns2Exp": "Servidor DNS alternativo para la configuración IP estática (se usa si el primero no está disponible)."
+		},
+		"scan": {
+			"enabled": "Iniciar con el WiFi más potente",
+			"explanation": "Si hay varias redes WiFi configuradas en ESPuino, o si opera una red WiFi en malla (mesh), ESPuino no se une simplemente a la primera red configurada que encuentre al escanear. En su lugar, escanea todas las redes y se une a la más potente. Ventaja: mayor velocidad de transferencia. Desventaja: tarda un poco más."
+		},
+		"delete": {
+			"title": "Eliminar WiFi",
+			"prompt": "¿Eliminar el WiFi guardado \"{{ssid}}\"?"
+		},
+		"restartPrompt": "¿Listo para continuar?",
+		"fullInterface": {
+			"title": "¿Solo quiere la interfaz web?",
+			"hint": "Si no quiere configurar el WiFi sino solo acceder a la interfaz (por ejemplo, de viaje sin un WiFi conocido): cierre esta ventana, abra su navegador habitual y acceda a esta dirección.",
+			"copy": "Copiar dirección",
+			"copied": "¡Dirección copiada!",
+			"copyFailed": "No se pudo copiar - seleccione y copie la dirección de arriba manualmente."
+		},
+		"fail": {
+			"wrong_password": "No se pudo unir a «{{ssid}}» — la contraseña es probablemente incorrecta (código {{code}}). Compruébela y vuelva a intentarlo.",
+			"not_found": "No se encuentra la red «{{ssid}}» (código {{code}}). ¿Está al alcance y en 2,4 GHz?",
+			"rejected": "El router rechazó la conexión a «{{ssid}}» (código {{code}}). Compruebe los filtros MAC, los límites de clientes o la configuración de seguridad (se requiere WPA2).",
+			"other": "Error al conectar con «{{ssid}}» (código {{code}}).",
+			"timeout": "Conectado a «{{ssid}}», pero no se recibió ninguna dirección IP (código {{code}}). Compruebe la configuración DHCP del router."
+		},
+		"test": {
+			"connecting": "Conectando con «{{ssid}}» …",
+			"connectingBtn": "Conectando …",
+			"success": "¡Conectado! El dispositivo ha recibido la dirección IP {{ip}} y ahora sale del modo de configuración. Vuelva a conectar su teléfono a su WiFi habitual y acceda al dispositivo a través de http://{{ip}}",
+			"reachTitle": "Acceder a su ESPuino",
+			"reachHint": "Su ESPuino ahora es accesible en esta dirección dentro de su WiFi. Cópiela o guárdela en marcadores - la red de configuración se cerrará."
+		}
+	},
+	"control": {
+		"title": "Control",
+		"first": "Primero",
+		"prev": "Anterior",
+		"playpause": "Reproducir / Pausa",
+		"forward": "Siguiente",
+		"last": "Último",
+		"volume": "Volumen",
+		"voldown": "Bajar volumen",
+		"volup": "Subir volumen",
+		"current": "Pista actual",
+		"command": "Ejecutar modificación"
+	},
+	"files": {
+		"title": "Archivos",
+		"loading": "Espere por favor...",
+		"context": {
+			"newFolder": "Nueva carpeta",
+			"play": "Reproducir",
+			"refresh": "Actualizar",
+			"delete": "Eliminar",
+			"rename": "Renombrar",
+			"download": "Descargar"
+		},
+		"files": {
+			"title": "Archivos",
+			"desc": "Subir uno o varios archivos"
+		},
+		"directory": {
+			"title": "Directorio",
+			"desc": "Subir un directorio con todos sus archivos y subdirectorios"
+		},
+		"search": {
+			"placeholder": "Buscar archivos..."
+		},
+		"upload": {
+			"title": "Subir",
+			"desc": "Iniciar la subida",
+			"selectFolder": "¡Seleccione la carpeta de destino para la subida!",
+			"selectFile": "¡Seleccione archivos o carpetas para subir!",
+			"success": "Subida completada con éxito ({{elapsed}}, {{speed}} KB/s)",
+			"error": "Error al subir",
+			"timeCalc": "Calculando el tiempo restante...",
+			"minutes_one": "minuto",
+			"minutes_other": "minutos",
+			"seconds": "segundos",
+			"fewSec": "unos",
+			"progress": "{{percent}}% ({{speed}} KB/s), quedan {{remaining.value}} {{remaining.unit}}..."
+		},
+		"rfid": {
+			"title": "Asignaciones RFID",
+			"saveButton": "Guardar asignación",
+			"idNumber": "Número RFID (12 dígitos) o <a href=\"https://forum.espuino.de/t/virtual-rfid-cards\" target=\"_blank\">virtual</a>",
+			"music": "Música",
+			"modification": "Modificación",
+			"fileurl": {
+				"title": "Archivo, directorio o URL (no se permiten ^ ni # como caracteres)",
+				"placeholder": "por ejemplo /mp3/Audiobook/Yakari/Yakari_and_Friends.mp3"
+			},
+			"playmode": {
+				"title": "Modo de reproducción",
+				"placeholder": "Seleccione el modo",
+				"mode": {
+					"1": "🎵 Pista única",
+					"2": "🎵🔁 Pista única (bucle)",
+					"12": "🎲💤 Pista única aleatoria de un directorio. Seguida de un modo de suspensión.",
+					"3": "📖 Audiolibro",
+					"16": "📚 Audiolibro con subdirectorios (recursivo)",
+					"4": "📖🔁 Audiolibro (bucle)",
+					"5": "📁 Todas las pistas de un directorio (ordenadas)",
+					"15": "🌳 Todas las pistas de un directorio + subdirectorios (ordenadas, recursivo)",
+					"6": "📁🔀 Todas las pistas de un directorio (aleatorio)",
+					"17": "🌳🔀 Todas las pistas de un directorio + subdirectorios (aleatorio, recursivo)",
+					"7": "📁🔁 Todas las pistas de un directorio (ordenadas, bucle)",
+					"9": "📁🔀🔁 Todas las pistas de un directorio (aleatorio, bucle)",
+					"13": "🎲📁 Todas las pistas de un subdirectorio aleatorio (ordenadas)",
+					"14": "🎲📁🔀 Todas las pistas de un subdirectorio aleatorio (aleatorio)",
+					"8": "📻 Radio web",
+					"11": "📃 Lista (archivos de la tarjeta SD y/o flujos web) a partir de un archivo .m3u local"
+				},
+				"error": "Modo de reproducción no válido"
+			},
+			"mod": {
+				"title": "Modificación",
+				"placeholder": "Seleccione la modificación",
+				"cmd": {
+					"100": "🔒 Bloqueo de botones",
+					"101": "💤 Suspender tras 15 minutos",
+					"102": "💤 Suspender tras 30 minutos",
+					"103": "💤 Suspender tras 1 hora",
+					"104": "💤 Suspender tras 2 horas",
+					"105": "💤 Suspender tras el final de la pista",
+					"106": "💤 Suspender tras el final de la lista de reproducción",
+					"107": "💤 Suspender tras el final de cinco pistas",
+					"110": "🔁 Repetir lista de reproducción en bucle",
+					"111": "🔂 Repetir pista en bucle",
+					"120": "🌙 Reducir el brillo de los LEDs (modo nocturno)",
+					"130": "📶 Alternar WiFi",
+					"140": "🔊 Alternar altavoz Bluetooth",
+					"141": "🎧 Alternar auriculares Bluetooth",
+					"142": "🔀 Alternar modo (Normal => Altavoz BT => Auriculares Bluetooth)",
+					"150": "📁 Activar FTP",
+					"151": "🌐 Anunciar dirección IP",
+					"152": "🕒 Anunciar hora actual",
+					"0": "🗑 Eliminar asignación",
+					"153": "💡 Alternar luz ambiental",
+					"154": "🔆 Aumentar brillo de LED",
+					"155": "🔅 Reducir brillo de LED",
+					"156": "📡 Reiniciar lector RFID",
+					"157": "🔋 Anunciar nivel de batería",
+					"170": "⏯ Alternar Reproducir/Pausa",
+					"171": "⏮ Pista anterior",
+					"172": "⏭ Pista siguiente",
+					"173": "⏪ Primera pista",
+					"174": "⏩ Última pista",
+					"175": "🔈 Volumen inicial",
+					"176": "🔊 Subir volumen",
+					"177": "🔉 Bajar volumen",
+					"178": "🔋 Mostrar voltaje de la batería",
+					"179": "💤 Suspender inmediatamente",
+					"180": "» Avanzar n segundos",
+					"181": "« Retroceder n segundos",
+					"182": "⏹ Detener",
+					"183": "🔄 Reiniciar",
+					"184": "📁 Pasar a la carpeta siguiente",
+					"185": "📁 Pasar a la carpeta anterior",
+					"186": "🎯 Vista previa de búsqueda (girar para navegar, se confirma al soltar/detenerse)",
+					"199": "📊 Mostrar carga de trabajo (consola)",
+					"241": "🏷 Leer tarjeta RFID virtual 01",
+					"242": "🏷 Leer tarjeta RFID virtual 02",
+					"243": "🏷 Leer tarjeta RFID virtual 03",
+					"244": "🏷 Leer tarjeta RFID virtual 04",
+					"245": "🏷 Leer tarjeta RFID virtual 05",
+					"246": "🏷 Leer tarjeta RFID virtual 06",
+					"247": "🏷 Leer tarjeta RFID virtual 07",
+					"248": "🏷 Leer tarjeta RFID virtual 08",
+					"249": "🏷 Leer tarjeta RFID virtual 09",
+					"250": "🏷 Leer tarjeta RFID virtual 10"
+				}
+			}
+		}
+	},
+	"mqtt": {
+		"title": "Configuración MQTT",
+		"saveButton": "Guardar configuración MQTT",
+		"enable": "Activar MQTT",
+		"clientId": {
+			"title": "Identificador de cliente MQTT",
+			"placeholder": "por ejemplo ESPuino-<MAC>",
+			"validation": "",
+			"explanation": "Identificador único usado por ESPuino para conectarse al broker MQTT - debe ser único en la red. El parámetro sustituible &lt;MAC&gt; se reemplaza por la dirección MAC."
+		},
+		"server": {
+			"title": "Servidor MQTT",
+			"placeholder": "por ejemplo 192.168.2.89",
+			"validation": "",
+			"explanation": "Nombre de host o dirección IP del broker MQTT."
+		},
+		"baseTopic": {
+			"title": "Tema base (opcional)",
+			"placeholder": "p. ej. home/espuino",
+			"validation": "",
+			"explanation": "Ruta base bajo la cual se publican todos los temas MQTT de ESPuino, por ejemplo 'espuino/salon/...'."
+		},
+		"deviceId": {
+			"title": "Identificador del dispositivo",
+			"placeholder": "p. ej. ESPuino-<MAC>",
+			"validation": "",
+			"explanation": "Identificador del dispositivo, que forma parte de la ruta de los temas MQTT - útil para distinguir varios ESPuino en el mismo broker. El parámetro sustituible &lt;MAC&gt; se reemplaza por la dirección MAC."
+		},
+		"topicsPreview": "Temas completos (vista previa)",
+		"restartNote": "Nota: los cambios de MQTT solo surten efecto tras reiniciar el dispositivo.",
+		"restartPrompt": "Se ha guardado la configuración MQTT. ¿Reiniciar ahora para aplicar los cambios?",
+		"topics": {
+			"preview": "Temas completos (vista previa)"
+		},
+		"user": {
+			"title": "Nombre de usuario MQTT (opcional)",
+			"placeholder": "nombre de usuario",
+			"validation": "",
+			"explanation": "Nombre de usuario para la conexión con el broker MQTT (si este requiere autenticación)."
+		},
+		"pwd": {
+			"title": "Contraseña MQTT (opcional)",
+			"placeholder": "contraseña",
+			"validation": "",
+			"explanation": "Contraseña para la conexión con el broker MQTT (si este requiere autenticación)."
+		},
+		"port": {
+			"title": "Puerto MQTT",
+			"placeholder": "por ejemplo 1883",
+			"validation": "",
+			"explanation": "Puerto TCP del broker MQTT (por defecto: 1883 para conexiones sin cifrar)."
+		},
+		"enableExp": "Activa la conexión a un broker MQTT. Es necesario reiniciar para que el cambio surta efecto."
+	},
+	"ftp": {
+		"title": "Configuración FTP",
+		"saveButton": "Guardar configuración FTP",
+		"user": {
+			"title": "Nombre de usuario FTP",
+			"placeholder": "nombre de usuario",
+			"explanation": "Nombre de usuario para acceder a ESPuino vía FTP."
+		},
+		"pwd": {
+			"title": "Contraseña FTP",
+			"placeholder": "contraseña",
+			"explanation": "Contraseña para acceder a ESPuino vía FTP."
+		},
+		"start": {
+			"title": "Iniciar servidor FTP",
+			"desc": "Activa el servidor FTP hasta el reinicio del dispositivo.",
+			"button": "Iniciar servidor FTP"
+		}
+	},
+	"bt": {
+		"saveButton": "Guardar configuración Bluetooth",
+		"normal": {
+			"title": "Salir del modo Bluetooth",
+			"desc": "Vuelve al modo normal con funcionalidad WiFi. Se puede reproducir música de la tarjeta SD y flujos web.",
+			"button": "Salir del modo Bluetooth",
+			"indicator": "Modo WiFi (RSSI: {{rssi}} dBm)"
+		},
+		"sink": {
+			"title": "ESPuino como altavoz Bluetooth",
+			"desc": "ESPuino se inicia como altavoz Bluetooth.",
+			"button": "Iniciar como altavoz Bluetooth",
+			"indicator": "Modo altavoz Bluetooth"
+		},
+		"source": {
+			"configtitle": "Configuración de auriculares Bluetooth",
+			"title": "Conectar con auriculares Bluetooth",
+			"desc": "El dispositivo se conecta a los auriculares Bluetooth especificados.",
+			"button": "Iniciar en modo auriculares",
+			"indicator": "Modo auriculares Bluetooth"
+		},
+		"scan": {
+			"title": "Buscar dispositivos",
+			"button": "Buscar",
+			"connect": "Conectar",
+			"save": "Guardar dispositivo",
+			"inProgress": "Buscando dispositivos...",
+			"noDevices": "No se encontró ningún dispositivo Bluetooth",
+			"notAllowed": "La búsqueda de dispositivos Bluetooth no está permitida en el modo actual. Primero cambie al modo auriculares Bluetooth."
+		},
+		"device": {
+			"title": "Dispositivo Bluetooth (auriculares)",
+			"placeholder": "por ejemplo Mis auriculares inalámbricos POGS",
+			"explanation": "Nombre con el que ESPuino aparece al emparejar por Bluetooth, o que utiliza al conectarse como auriculares Bluetooth."
+		},
+		"pincode": {
+			"title": "Código PIN de emparejamiento",
+			"placeholder": "por ejemplo 0000",
+			"explanation": "Código PIN para el emparejamiento Bluetooth (solo necesario si el dispositivo de destino lo solicita)."
+		},
+		"switchmode": {
+			"title": "Cambiar al modo WiFi",
+			"prompt": "El modo actual no admite el control a través del sitio web. ¿Desea cambiar al modo WiFi para permitir el control a través del sitio web? El dispositivo se reiniciará.",
+			"button": "Cambiar al modo WiFi"
+		}
+	},
+	"general": {
+		"saveButton": "Guardar configuración",
+		"language": "Idioma",
+		"volume": {
+			"title": "Volumen",
+			"restart": "Tras el reinicio",
+			"speakerMax": "Volumen máximo (altavoz)",
+			"headphoneMax": "Volumen máximo (auriculares)",
+			"restartExp": "Volumen con el que arranca ESPuino tras encenderse (salvo que esté activado 'Recordar el último volumen').",
+			"speakerMaxExp": "Volumen máximo permitido al reproducir a través del altavoz.",
+			"headphoneMaxExp": "Volumen máximo permitido al reproducir a través de auriculares."
+		},
+		"equalizer": {
+			"title": "Ecualizador",
+			"gainLowPass": "Graves (en dB)",
+			"gainBandPass": "Medios (en dB)",
+			"gainHighPass": "Agudos (en dB)",
+			"info": "Las frecuencias son, según la biblioteca (ESP32-audioI2S), 500 Hz LowShelf, 3000 Hz PeakEQ y 6000 Hz HighShelf."
+		},
+		"rfid": {
+			"title": "Lector RFID",
+			"readerType": {
+				"title": "Tipo de lector",
+				"auto": "Detección automática",
+				"mfrc522_spi": "MFRC522 (SPI)",
+				"mfrc522_i2c": "MFRC522 (I2C)",
+				"pn5180": "PN5180",
+				"description": "Seleccione el tipo de lector RFID conectado a su ESPuino. La detección automática intentará determinar el tipo de lector conectado automáticamente."
+			},
+			"pn5180Lpcd": "Activar PN5180 LPCD",
+			"pn5180LpcdExp": "Activa la detección de tarjetas de bajo consumo para el lector RFID PN5180. Solo es posible si los pines de soldadura están configurados correctamente.",
+			"mfrc522Gain": "Ganancia MFRC522",
+			"mfrc522GainExp": "Define la sensibilidad del lector RFID MFRC522. Los valores posibles van de 0 (sensibilidad más baja) a 7 (sensibilidad más alta). El valor predeterminado es 7.",
+			"pn5180Debounce": "Antirrebote PN5180",
+			"pn5180DebounceExp": "Tiempo en milisegundos durante el cual una tarjeta debe permanecer sin detectarse antes de considerarse retirada. Evita que breves pérdidas de lectura (por ejemplo, con una mayor distancia entre la tarjeta y el lector) se interpreten erróneamente como una retirada de tarjeta. Es necesario reiniciar para que un cambio surta efecto. El valor predeterminado es 500 ms."
+		},
+		"options": {
+			"title": "Opciones",
+			"playMono": "Reproducción mono",
+			"playMonoExp": "Si hay instalados dos altavoces, se puede reproducir en estéreo. Más información <a href='https://forum.espuino.de/t/stereo-ausgabe/341' target='_blank'>aquí</a>.",
+			"savePlayPosShutdown": "Guardar posición de reproducción al apagar",
+			"savePlayPosShutdownExp": "Cuando se apaga el dispositivo, se guarda la posición de reproducción de los audiolibros. Más información <a href='https://forum.espuino.de/t/welche-optionen-beim-kompilieren-gibt-es/120' target='_blank'>aquí</a> bajo <code>SAVE_PLAYPOS_BEFORE_SHUTDOWN</code>.",
+			"savePlayPosRfidChange": "Guardar posición de reproducción al cambiar de etiqueta RFID",
+			"savePlayPosRfidChangeExp": "Al cambiar a una nueva etiqueta RFID, se guarda la posición de reproducción de los audiolibros. Más información <a href='https://forum.espuino.de/t/welche-optionen-beim-kompilieren-gibt-es/120' target='_blank'>aquí</a> bajo <code>SAVE_PLAYPOS_WHEN_RFID_CHANGE</code>.",
+			"savePlayPosInterval": "Guardar automáticamente la posición de reproducción de audiolibros largos cada",
+			"savePlayPosIntervalSecs": "segundos",
+			"savePlayPosIntervalExp": "Guarda periódicamente la posición de reproducción de audiolibros largos (archivos de 5 minutos o más) en la memoria flash durante la reproducción, de modo que un corte de energía repentino (batería agotada, desconexión, fallo) haga retroceder como máximo el número de segundos configurado en lugar de reiniciar el archivo. Afecta solo a los modos de audiolibro; las pistas cortas o fraccionadas ya se guardan en cada cambio de pista. Un intervalo más corto exige más a la memoria flash; se recomiendan de 30 a 60 segundos, ya que valores mucho más bajos apenas aportan beneficio y desgastan la memoria flash más rápido.",
+			"pauseIfRfidRemoved": "Pausar si se retira la etiqueta RFID",
+			"pauseIfRfidRemovedExp": "Pausa la reproducción si se retira la etiqueta RFID. Más información <a href='https://forum.espuino.de/t/welche-optionen-beim-kompilieren-gibt-es/120' target='_blank'>aquí</a> bajo <code>PAUSE_IF_RFID_REMOVED</code>.",
+			"dontAcceptRfidTwice": "No aceptar la etiqueta RFID dos veces",
+			"dontAcceptRfidTwiceExp": "No acepta la misma etiqueta RFID dos veces. No se puede usar junto con <em>Pausar si se retira la etiqueta RFID</em>.",
+			"resumeOnSameRfid": "Reanudar la reproducción si se vuelve a colocar la misma RFID",
+			"resumeOnSameRfidExp": "Si la reproducción está en pausa y se vuelve a colocar la misma etiqueta RFID, la reproducción se reanuda. Solo activo si <em>No aceptar la etiqueta RFID dos veces</em> está activado.",
+			"playLastRfidOnReboot": "Reproducir la última etiqueta RFID al reiniciar",
+			"playLastRfidOnRebootExp": "La última etiqueta RFID leída se reproduce después de reiniciar. Más información <a href='https://forum.espuino.de/t/welche-optionen-beim-kompilieren-gibt-es/120' target='_blank'>aquí</a> bajo <code>PLAY_LAST_RFID_ON_REBOOT</code>.",
+			"pauseOnMinVolume": "Pausar al volumen mínimo",
+			"pauseOnMinVolumeExp": "La reproducción se pausa cuando el volumen alcanza el mínimo. Más información <a href='https://forum.espuino.de/t/lautstaerke-0-pause/1631' target='_blank'>aquí</a>.",
+			"recoverVolBoot": "Usar el último volumen al reiniciar",
+			"recoverVolBootExp": "El dispositivo recuerda, tras un reinicio, el último volumen usado y lo restablece automáticamente.",
+			"volumeCurve": "Matices más finos a bajo volumen",
+			"volumeCurveExp": "Usa el cálculo logarítmico del volumen. Puede ayudar si los matices son demasiado bruscos en el rango de volumen bajo."
+		},
+		"neopixel": {
+			"title": "Neopixel (brillo)",
+			"restart": "Tras el reinicio",
+			"nightmode": "Para el modo nocturno",
+			"atmomode": "Para el modo ambiente",
+			"restartExp": "Brillo de los LEDs justo después de encender el dispositivo.",
+			"nightmodeExp": "Brillo reducido de los LEDs en modo nocturno.",
+			"atmomodeExp": "Brillo de los LEDs en modo de luz ambiental (Atmolight)."
+		},
+		"sleep": {
+			"title": "Suspensión profunda",
+			"inactivity": "Tras n minutos de inactividad",
+			"inactivityExp": "Tiempo en minutos sin interacción tras el cual ESPuino entra automáticamente en suspensión profunda."
+		},
+		"battery": {
+			"title": "Batería",
+			"desc": "Mostrar el estado de tensión mediante Neopixel",
+			"lowWarning": "Mostrar aviso por debajo de este umbral (en voltios)",
+			"lowCritical": "Tensión más baja (en voltios), indicada por un LED",
+			"criticalShutoff": "Por debajo de esta tensión (en voltios), ESPuino se apaga",
+			"high": "Tensión indicada por todos los LEDs (en voltios)",
+			"measureInterval": "Intervalo entre mediciones (en minutos)",
+			"lowWarningExp": "Tensión por debajo de la cual se activa un aviso visual (LED) de batería baja.",
+			"lowCriticalExp": "Tensión considerada como 0% de carga de la batería (batería vacía).",
+			"highExp": "Tensión considerada como 100% de carga de la batería (batería llena).",
+			"criticalShutoffExp": "Tensión a la que ESPuino se apaga automáticamente para proteger la batería de una descarga profunda.",
+			"measureIntervalExp": "Intervalo de tiempo en minutos con el que se mide la tensión de la batería."
+		},
+		"playlist": {
+			"title": "Lista de reproducción",
+			"sortMode": "Modo de ordenación para la lista de reproducción y el explorador de archivos",
+			"strcmp": "Orden estándar",
+			"strnatcmp": "Natural: distingue mayúsculas y minúsculas",
+			"strnatcasecmp": "Natural: no distingue mayúsculas y minúsculas",
+			"recDepth": "Profundidad máxima de recursión al generar listas de reproducción recursivas",
+			"sortModeExp": "Define cómo se ordenan los archivos y listas de reproducción: orden alfabético estándar (por ejemplo, '10' antes que '2') u orden natural, que ordena correctamente los números en los nombres (por ejemplo, '2' antes que '10'), con o sin distinción entre mayúsculas y minúsculas.",
+			"recDepthExp": "Profundidad máxima de directorio explorada al generar listas de reproducción recursivas a partir de subcarpetas."
+		},
+		"tabs": {
+			"playback": "Reproducción",
+			"rfidReader": "Lector RFID",
+			"encoderButtons": "Codificador rotativo y botones",
+			"led": "LED",
+			"power": "Energía"
+		}
+	},
+	"tools": {
+		"nvs": {
+			"title": "Asignaciones RFID guardadas",
+			"desc": "Las asignaciones RFID no se almacenan en la tarjeta SD, sino en la memoria interna no volátil (NVS) de ESPuino.",
+			"list": {
+				"title": "Lista de todas las asignaciones RFID guardadas",
+				"show": "Mostrar asignaciones"
+			},
+			"erase": {
+				"title": "Eliminar todas las asignaciones RFID",
+				"desc": "Al importar, solo se insertarán entradas nuevas, pero las antiguas no se eliminarán. Solo se sobrescribirán las asignaciones antiguas de la misma entrada. Con esta función se eliminarán todas las asignaciones RFID existentes. Más <a href=\"https://forum.espuino.de/t/die-backupfunktion-des-espuino/508\" target=\"_blank\">información</a> (en alemán).",
+				"button": "Eliminar todas las asignaciones",
+				"prompt": "¿Eliminar todas las asignaciones RFID guardadas?"
+			},
+			"delete": {
+				"title": "Eliminar asignaciones RFID",
+				"prompt": "¿Eliminar la asignación \"{{rfid}}\"?"
+			},
+			"import": {
+				"title": "Importar",
+				"desc": "Aquí se puede subir el archivo de copia de seguridad para importar las asignaciones RFID.",
+				"button": "Importar asignaciones"
+			},
+			"export": {
+				"title": "Exportar",
+				"desc": "Aquí se puede descargar un archivo de copia de seguridad para exportar las asignaciones RFID.",
+				"button": "Exportar asignaciones"
+			}
+		},
+		"fwupdate": {
+			"title": "Actualización de firmware",
+			"button": "Cargar firmware",
+			"desc": "Aquí se puede realizar la actualización del firmware.",
+			"github": {
+				"title": "Cargar firmware desde GitHub",
+				"desc": "Descarga un firmware listo para usar directamente desde el repositorio ESPuino-Firmware y lo instala - sin descarga manual.",
+				"branch": "Rama",
+				"checkButton": "Buscar actualizaciones",
+				"searching": "Buscando…",
+				"noBuilds": "No se encontró ninguna versión para esta selección.",
+				"notAvailablePlatform": "No hay ningún firmware listo para usar disponible en el repositorio para esta plataforma ({{platform}}). Por favor, compile el firmware manualmente.",
+				"notAvailableCustomBuild": "Esta placa se compiló con ajustes personalizados (settings-override.h / platformio-override.ini). El firmware oficial no incluye estas personalizaciones - por favor, compílelo usted mismo y cárguelo manualmente como de costumbre.",
+				"notAvailableOta": "Esta placa no admite la actualización de firmware a través de la interfaz web. Por favor, flashee el firmware a través del puerto serie.",
+				"buildEntry": "{{date}} – commit:",
+				"installButton": "Instalar",
+				"installPrompt": "¿Instalar el firmware del {{date}} (commit {{commit}}) ahora?\n\nPlataforma: {{platform}}\nRama: {{branch}}\nIdioma: {{language}}\n\nEl nuevo firmware se instalará ahora en su ESPuino. Esto tarda aproximadamente un minuto - si hay conectada una tira Neopixel con varios LEDs, se mostrará una animación de progreso (azul) durante este tiempo. Si solo hay un LED, este parpadeará en azul.",
+				"fetchError": "No se pudo obtener la lista de firmwares."
+			}
+		}
+	},
+	"help": {
+		"forum": {
+			"title": "Foro",
+			"desc": "¿Tiene problemas o desea hablar sobre ESPuino?<br /> ¡Únase a nosotros en el <a href=\"https://forum.espuino.de\" target=\"_blank\">Foro de ESPuino</a>! Además, hay mucha <a href=\"https://forum.espuino.de/c/dokumentation/anleitungen/10\" target=\"_blank\">documentación</a> disponible en línea."
+		},
+		"swagger": {
+			"title": "Swagger",
+			"desc": "Documentación de la API REST: <a href=\"swagger.html\" target=\"_blank\">Swagger</a>."
+		}
+	},
+	"datetime": {
+		"day": "día",
+		"days": "días",
+		"hour": "hora",
+		"hours": "horas",
+		"minute": "minuto",
+		"minutes": "minutos",
+		"second": "segundo",
+		"seconds": "segundos"
+	},
+	"systeminfo": {
+		"title": "Información",
+		"softwareversion": "ESPuino {{softwareversion}}",
+		"gitversion": "ESPuino {{gitversion}}",
+		"branch": "Rama: {{branch}}",
+		"arduinoversion": "Versión Arduino: {{arduinoversion}} (ESP-IDF {{idfversion}})",
+		"hardware": "Hardware: {{hwmodel}}, Revisión {{hwrevision}}, CPU: {{hwfreq}} MHZ",
+		"freeheap": "Memoria libre: {{freeheap}} bytes",
+		"largestfreeblock": "Mayor bloque de memoria libre: {{largestfreeblock}} bytes",
+		"freepsram": "PS-RAM libre: {{freepsram}} bytes",
+		"currentip": "Dirección IP actual: {{currentip}}",
+		"macAddress": "Dirección MAC: {{macAddress}}",
+		"rssi": "Intensidad de la señal WiFi: {{rssi}} dBm",
+		"audiotimetotal": "Tiempo total de reproducción de audio desde {{firststart}}: {{audiotimetotal}}",
+		"audiotimesincestart": "Tiempo de reproducción desde el último inicio: {{audiotimesincestart}}",
+		"currvoltage": "Voltaje actual de la batería: {{currvoltage}} V",
+		"chargelevel": "Nivel de carga actual: {{chargelevel}} %",
+		"hallsensor": "Valor nulo del sensor de efecto Hall: {{hsnullfieldvalue}}, actual: {{hsactual}}, diff: {{hsdiff}}, último estado (LastWaitFor): {{hslastwaitforstate}} (esperado: {{hswaited}} ms)"
+	}
+}

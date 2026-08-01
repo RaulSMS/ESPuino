@@ -115,6 +115,7 @@
 #define DE 1
 #define EN 2
 #define FR 3
+#define ES 4
 
 // Virtual RFID Cards
 #define VIRTUAL_RFID_CARD_01 "900000000001"

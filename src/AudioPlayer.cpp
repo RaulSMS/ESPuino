@@ -748,6 +748,9 @@ static bool AudioPlayer_SpeakBatteryStatus(bool isLowWarning) {
 		case FR:
 			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batterie faible : %u pourcent, %.2f volts" : "Niveau de batterie : %u pourcent, %.2f volts", chargeLevel, voltage);
 			return audio->connecttospeech(battStringBuff, "fr");
+		case ES:
+			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batería baja: %u por ciento, %.2f voltios" : "Nivel de batería: %u por ciento, %.2f voltios", chargeLevel, voltage);
+			return audio->connecttospeech(battStringBuff, "es");
 		default:
 			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Battery low: %u percent, %.2f volts" : "Battery level: %u percent, %.2f volts", chargeLevel, voltage);
 			return audio->connecttospeech(battStringBuff, "en");
@@ -1241,6 +1244,10 @@ void AudioPlayer_Loop() {
 				ipText.replace(".", "point");
 				speechOk = audio->connecttospeech(ipText.c_str(), "fr");
 				break;
+			case ES:
+				ipText.replace(".", "punto");
+				speechOk = audio->connecttospeech(ipText.c_str(), "es");
+				break;
 			default:
 				ipText.replace(".", "point");
 				speechOk = audio->connecttospeech(ipText.c_str(), "en");
@@ -1260,6 +1267,9 @@ void AudioPlayer_Loop() {
 #if (LANGUAGE == DE)
 		snprintf(timeStringBuff, sizeof(timeStringBuff), "Es ist %02d:%02d Uhr", timeinfo.tm_hour, timeinfo.tm_min);
 		speechOk = audio->connecttospeech(timeStringBuff, "de");
+#elif (LANGUAGE == ES)
+		snprintf(timeStringBuff, sizeof(timeStringBuff), "Son las %02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+		speechOk = audio->connecttospeech(timeStringBuff, "es");
 #else
 		if (timeinfo.tm_hour > 12) {
 			snprintf(timeStringBuff, sizeof(timeStringBuff), "It is %02d:%02d PM", timeinfo.tm_hour - 12, timeinfo.tm_min);

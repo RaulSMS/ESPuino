@@ -220,7 +220,7 @@ I [xxxxx] Current battery charge: 64.29 %
 way `CMD_TELL_IP_ADDRESS` (151, "Announce IP-Address") and `CMD_TELL_CURRENT_TIME` (152, "Announce
 current time") already do — via the `connecttospeech()` online TTS engine (Google Translate TTS), so
 **it requires an active WiFi connection**, independent of whether `MEASURE_BATTERY_VOLTAGE` is wired up.
-It says something like *"Battery level: 82 percent, 3.97 volts"* (localized to DE/EN/FR based on the
+It says something like *"Battery level: 82 percent, 3.97 volts"* (localized to DE/EN/FR/ES based on the
 firmware's `LANGUAGE` setting). Reachable the same way as above — select **"🔋 Announce battery
 level"** instead of **"🔋 Show battery voltage"** in the same dropdown, or assign it to a button/RFID
 tag/MQTT/websocket the same way (action id `157`).
