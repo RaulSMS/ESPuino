@@ -85,6 +85,13 @@ jobs:
           platformio run -e ${{ matrix.variant }}
           cp .pio/build/${{ matrix.variant }}/firmware.bin binaries/firmware-FR.bin
 
+      # --- Build 4: Language ES ---
+      - name: Build ${{ matrix.variant }} (ES)
+        run: |
+          sed -i -E 's/^[[:space:]]*#define LANGUAGE .*/\t#define LANGUAGE ES/' src/settings.h
+          platformio run -e ${{ matrix.variant }}
+          cp .pio/build/${{ matrix.variant }}/firmware.bin binaries/firmware-ES.bin
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

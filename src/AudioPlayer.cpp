@@ -741,17 +741,21 @@ static bool AudioPlayer_SpeakBatteryStatus(bool isLowWarning) {
 	static char battStringBuff[64];
 	uint8_t chargeLevel = (uint8_t) roundf(Battery_EstimateLevel() * 100);
 	float voltage = Battery_GetVoltage();
-	switch (LANGUAGE) {
-		case DE:
-			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Akku schwach: %u Prozent, %.2f Volt" : "Akkustand: %u Prozent, %.2f Volt", chargeLevel, voltage);
-			return audio->connecttospeech(battStringBuff, "de");
-		case FR:
-			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batterie faible : %u pourcent, %.2f volts" : "Niveau de batterie : %u pourcent, %.2f volts", chargeLevel, voltage);
-			return audio->connecttospeech(battStringBuff, "fr");
-		default:
-			snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Battery low: %u percent, %.2f volts" : "Battery level: %u percent, %.2f volts", chargeLevel, voltage);
-			return audio->connecttospeech(battStringBuff, "en");
-	}
+	// DE/FR branches compile automatically when LANGUAGE (settings-override.h) is set to DE/FR —
+	// nothing to uncomment here, unlike the web-UI locale toggle (see AGENTS.md "Language support").
+	#if (LANGUAGE == DE)
+	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Akku schwach: %u Prozent, %.2f Volt" : "Akkustand: %u Prozent, %.2f Volt", chargeLevel, voltage);
+	return audio->connecttospeech(battStringBuff, "de");
+	#elif (LANGUAGE == FR)
+	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batterie faible : %u pourcent, %.2f volts" : "Niveau de batterie : %u pourcent, %.2f volts", chargeLevel, voltage);
+	return audio->connecttospeech(battStringBuff, "fr");
+	#elif (LANGUAGE == ES)
+	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Batería baja: %u por ciento, %.2f voltios" : "Nivel de batería: %u por ciento, %.2f voltios", chargeLevel, voltage);
+	return audio->connecttospeech(battStringBuff, "es");
+	#else
+	snprintf(battStringBuff, sizeof(battStringBuff), isLowWarning ? "Battery low: %u percent, %.2f volts" : "Battery level: %u percent, %.2f volts", chargeLevel, voltage);
+	return audio->connecttospeech(battStringBuff, "en");
+	#endif
 }
 #endif
 
@@ -1232,19 +1236,19 @@ void AudioPlayer_Loop() {
 		String ipText = Wlan_GetIpAddress();
 		bool speechOk;
 		// make IP as text (replace thousand separator with locale text)
-		switch (LANGUAGE) {
-			case DE:
-				ipText.replace(".", "Punkt");
-				speechOk = audio->connecttospeech(ipText.c_str(), "de");
-				break;
-			case FR:
-				ipText.replace(".", "point");
-				speechOk = audio->connecttospeech(ipText.c_str(), "fr");
-				break;
-			default:
-				ipText.replace(".", "point");
-				speechOk = audio->connecttospeech(ipText.c_str(), "en");
-		}
+#if (LANGUAGE == DE)
+		ipText.replace(".", "Punkt");
+		speechOk = audio->connecttospeech(ipText.c_str(), "de");
+#elif (LANGUAGE == FR)
+		ipText.replace(".", "point");
+		speechOk = audio->connecttospeech(ipText.c_str(), "fr");
+#elif (LANGUAGE == ES)
+		ipText.replace(".", "punto");
+		speechOk = audio->connecttospeech(ipText.c_str(), "es");
+#else
+		ipText.replace(".", "point");
+		speechOk = audio->connecttospeech(ipText.c_str(), "en");
+#endif
 		if (!speechOk) {
 			System_IndicateError();
 		}
@@ -1260,6 +1264,9 @@ void AudioPlayer_Loop() {
 #if (LANGUAGE == DE)
 		snprintf(timeStringBuff, sizeof(timeStringBuff), "Es ist %02d:%02d Uhr", timeinfo.tm_hour, timeinfo.tm_min);
 		speechOk = audio->connecttospeech(timeStringBuff, "de");
+#elif (LANGUAGE == ES)
+		snprintf(timeStringBuff, sizeof(timeStringBuff), "Son las %02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+		speechOk = audio->connecttospeech(timeStringBuff, "es");
 #else
 		if (timeinfo.tm_hour > 12) {
 			snprintf(timeStringBuff, sizeof(timeStringBuff), "It is %02d:%02d PM", timeinfo.tm_hour - 12, timeinfo.tm_min);

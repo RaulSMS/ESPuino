@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="es">
 
 <head>
 	<script>
@@ -301,8 +301,9 @@
 										style="margin-left: 0; margin-top: 10px; margin-right: 5px;"></i>
 									<select class="form-control form-select" id="langSel" name="langSel">
 										<!-- Do not translate those texts! -->
-										<option value="de">Deutsch</option>
 										<option value="en">English</option>
+										<option value="es">Espa&ntilde;ol</option>
+										<option value="de">Deutsch</option>
 										<option value="fr">Fran&ccedil;aise</option>
 									</select>
 								</div>
@@ -2716,7 +2717,7 @@
 
 		async function checkGithubFirmwareBuilds() {
 			const branch = $('#githubBranchSel').val();
-			// firmware repo languages are DE/EN/FR, matching i18next's 2-letter codes
+			// firmware repo languages are DE/EN/FR/ES, matching i18next's 2-letter codes
 			const lang = (i18next.language || 'en').toUpperCase();
 			const path = `Firmwares/${branch}/${githubPlatform}/firmware-${lang}.bin`;
 			const list = $('#githubBuildList');

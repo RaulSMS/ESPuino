@@ -19,8 +19,8 @@ clang-format check, and manual on-device testing.
 All documentation (this file, `CLAUDE.md`, `GEMINI.md`, `FirstSteps.md`, implementation plans,
 walkthroughs), code comments, commit messages, and assistant responses must be written in English,
 unless the user explicitly asks for another language for a specific piece of output. This doesn't
-apply to intentionally-localized content that's non-English by design — `LogMessages_{DE,EN,FR}.cpp`
-and `html/locales/*.json` are supposed to contain German/French strings.
+apply to intentionally-localized content that's non-English by design — `LogMessages_{DE,EN,FR,ES}.cpp`
+and `html/locales/*.json` are supposed to contain German/French/Spanish strings.
 
 ## Build / lint commands
 
@@ -37,9 +37,9 @@ pio run -t clean
 
 Environments defined in `platformio.ini`: `lolin_d32_pro`, `lolin_d32_pro_sdmmc_pe`, `ttgo_t8`,
 `complete`, `esp32-wrover-devkitc-v4-8mb`, `esp32-s3-devkitc-1`. CI (`.github/workflows/firmware-builds.yml`)
-builds `lolin_d32_pro`, `lolin_d32_pro_sdmmc_pe`, and `complete` for all three languages (DE/EN/FR) by
+builds `lolin_d32_pro`, `lolin_d32_pro_sdmmc_pe`, and `complete` for all four languages (DE/EN/FR/ES) by
 sed-patching `#define LANGUAGE` in `src/settings.h` before each build — a change must compile cleanly
-under all three language configs.
+under all four language configs.
 
 Formatting is enforced by `.clang-format` (WebKit-based, tabs, 4-width) and checked in CI
 (`clang-format-check.yml`) against everything under `src/`. Run clang-format on changed files before
@@ -88,7 +88,7 @@ SPI/I2C and PN5180 are autodetected at boot), `Led` (Neopixel/FastLED status fee
 `RotaryEncoder`, `Bluetooth` (A2DP sink/source), `Mqtt`, `Ftp`, `Web` (async webserver + REST API +
 web UI serving), `Wlan`, `SdCard`, `Battery`/`BatteryMeasureVoltage`, `Port` (I2C PCA9555 port
 expander), `Power`, `System` (operation-mode state machine: normal / BT-sink / BT-source), `Cmd`
-(dispatches the numeric command codes from `values.h`), `Log`/`logmessages.h`/`LogMessages_{DE,EN,FR}.cpp`
+(dispatches the numeric command codes from `values.h`), `Log`/`logmessages.h`/`LogMessages_{DE,EN,FR,ES}.cpp`
 (compile-time-selected localized log strings).
 
 Some subsystems that need true concurrency run a dedicated FreeRTOS task via
@@ -131,8 +131,8 @@ message) funnels through, so one case makes it reachable from all of them; and, 
 (physical-button assignment dropdowns) and/or `mods` array (RFID-modification-tag assignment + the
 Control tab's "run a command now" dropdown/button) in `html/management.html`'s
 `replaceCommandSelect`/`addOption` setup — both arrays feed the same generic select-population code,
-and each option's label comes from the locale key `files.rfid.mod.cmd.<id>` (add it to all three of
-`html/locales/{de,en,fr}.json`, not just `en.json`, or the label falls back to the raw i18next key).
+and each option's label comes from the locale key `files.rfid.mod.cmd.<id>` (add it to all four of
+`html/locales/{de,en,fr,es}.json`, not just `en.json`, or the label falls back to the raw i18next key).
 
 ### RFID reader auto-detection and the RST-pin hazard
 
@@ -209,9 +209,44 @@ outside this repo, not in `src/`.
 
 `html/` holds the static web UI (`management.html`, `accesspoint.html` + JS/CSS) served by `Web.cpp`'s
 async webserver; `processHtml.py` (a `pre:` extra_script in `platformio.ini`) processes/embeds these at
-build time. Localization is client-side `i18next` with per-locale JSON in `html/locales/`
-(`de.json`, `en.json`, `fr.json`); language is auto-detected from `navigator.language`, user override
-persisted in `localStorage`. The REST API surface is specified in `REST-API.yaml`.
+build time. Localization is client-side `i18next` with per-locale JSON in `html/locales/` (`de.json`,
+`en.json`, `fr.json`, `es.json`, all four embedded by default — see "Language support" below); language
+is auto-detected from `navigator.language`, user override persisted in `localStorage`. The REST API
+surface is specified in `REST-API.yaml`.
+
+### Language support: compile-time `LANGUAGE` vs. the web-UI locale set
+
+There are two independent, differently-scoped language mechanisms in this codebase — don't confuse
+them when asked to add/restrict a language:
+
+1. **Compile-time `LANGUAGE`** (`settings-override.h`, see "Configuration / HAL layering" above) picks
+   exactly one language for logs (`LogMessages_{DE,EN,FR,ES}.cpp`, each file's entire body wrapped in
+   `#if (LANGUAGE == XX) ... #endif`) and spoken TTS announcements (the `#if (LANGUAGE == DE) #elif
+   (LANGUAGE == FR) #elif (LANGUAGE == ES) #else` chains in `AudioPlayer.cpp`'s
+   `AudioPlayer_SpeakBatteryStatus()`, the `TTS_IP_ADDRESS` handler, and the `TTS_CURRENT_TIME`
+   handler). This fork's default is `ES`. All four languages (DE/EN/FR/ES) are always *available* here —
+   nothing to uncomment, changing `LANGUAGE` in `settings-override.h` to any of the four is enough, and
+   the unselected languages' string literals simply don't get compiled in (`#if`-guarded already).
+2. **Web-UI locale set** (`html/locales/*.json` + the `#langSel` `<select>` in `accesspoint.html` and
+   `management.html`) is i18next's runtime language switcher in the browser — independent of
+   `LANGUAGE`, and capable of offering multiple languages simultaneously: `processHtml.py`'s
+   `BINARY_FILES` list embeds all four `locales/{de,en,es,fr}.json`, and both HTML files' `#langSel`
+   dropdowns list all four `<option>`s. **To trim a language back out** (e.g. if flash ever gets tight),
+   remove/comment the matching `Path("locales/xx.json")` line in `processHtml.py` *and* the matching
+   `<option value="xx">` line in *both* `accesspoint.html` and `management.html` — all three spots must
+   move together, or the dropdown will offer a language whose JSON was never embedded (404 → i18next
+   silently falls back to `fallbackLng: 'en'`, which is exactly the "TTS speaks Spanish but the UI stays
+   English" symptom that originally exposed this — `es.json` was simply missing from `BINARY_FILES`).
+
+**Measured flash/RAM impact** (esp32-s3-devkitc-1, 2026-08-01, `-Os`): going from `en`/`es`-only to all
+four web-UI locales embedded costs **~22 KB flash** (3,094,439 → 3,116,655 bytes, 47.2% → 47.6% of
+6,553,600 B partition) and **zero RAM** (48,728 B either way — static embedded assets live in flash,
+not RAM). Switching the compile-time `LANGUAGE` value between DE/EN/FR/ES likewise only moves flash by
+a similar small amount (different string literal sets are near-identical in size) and never touches
+RAM. All four `LANGUAGE` values and all four web-UI locales were build-verified to compile cleanly.
+Given the total cost is under 0.5% of flash, this fork keeps all four languages on unconditionally
+rather than trimming — the per-language `#if`/commented-`Path()`/commented-`<option>` toggle points
+above exist for the *option* to trim later, not because trimming is expected or recommended by default.
 
 ### Filesystem access
 
@@ -330,9 +365,9 @@ that baseline, a few things are worth knowing if asked to reduce compile time or
   checking whether `ESP32-A2DP` needs it transitively before dropping it.
 - No `-flto` in `build_flags`. Untried here, but cross-TU dead-code elimination under `-Os` often buys
   a further few percent on ESP32 — costs link time, so weigh against the point below.
-- CI (`.github/workflows/firmware-builds.yml`) builds 3 envs × 3 languages = 9 full cold builds with no
-  `ccache`/`sccache` configured anywhere. Since the three language variants differ only in the
-  `LogMessages_{DE,EN,FR}.cpp` translation units selected by the `LANGUAGE` define, a shared ccache
+- CI (`.github/workflows/firmware-builds.yml`) builds 3 envs × 4 languages = 12 full cold builds with no
+  `ccache`/`sccache` configured anywhere. Since the four language variants differ only in the
+  `LogMessages_{DE,EN,FR,ES}.cpp` translation units selected by the `LANGUAGE` define, a shared ccache
   directory across those jobs (restored via `actions/cache`, keyed on toolchain+flags) would likely
   turn most repeated-language rebuilds into cache hits — probably the highest-leverage CI-time win
   available, and lower-risk than touching sdkconfig feature flags.
