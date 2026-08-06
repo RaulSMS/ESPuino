@@ -1,11 +1,10 @@
 # ESPuino 3D-printed case
 
-Parametric OpenSCAD enclosure for this project. Two files, printed separately:
-
-- `espuino_box.scad` — the shell (also contains an internal copy of the lid, for
-  the `assembly` preview — see below).
-- `espuino_lid.scad` — the bottom plate, as a standalone file so it can be
-  pasted into the online renderer on its own without dragging the shell along.
+Parametric OpenSCAD enclosure for this project — a single file,
+`espuino_box.scad`, containing both parts (shell and lid). Printed as two
+separate prints from that one file: set the `part` parameter to `"shell"`,
+`"lid"`, or `"assembly"` (both together, for previewing the fit) before
+rendering/exporting.
 
 ## Getting the tools
 
@@ -16,12 +15,12 @@ Parametric OpenSCAD enclosure for this project. Two files, printed separately:
   Paste a `.scad` file's contents in, press F5 for a fast preview or
   Ctrl+Enter for a full render before exporting STL.
 
-## Working with these files (with or without AI help)
+## Working with this file (with or without AI help)
 
-Every parameter lives at the top of each file with an inline comment
+Every parameter lives at the top of the file with an inline comment
 explaining its value and *why* it's set that way (tolerances, screw types,
 print constraints, etc.) — read those comments before changing a number, and
-update them if you change it. The `.scad` files are the single source of
+update them if you change it. `espuino_box.scad` is the single source of
 truth for current dimensions; don't trust older chat logs or docs over what's
 actually in the file.
 
@@ -43,4 +42,5 @@ this case:
   and tried against the real part.
 
 Print-process specifics (orientation, supports, screw types) are documented
-in each file's own header comment.
+in the file's own header comment — the shell and lid print differently, so
+check which `part` you're printing before trusting an orientation note.

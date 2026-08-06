@@ -8,15 +8,15 @@ below.
 
 ## Files
 
-- `espuino_box.scad` — the shell (walls, top/front/rear faces). `part` parameter selects `"shell"`,
-  `"lid"`, or `"assembly"` (both together) for preview.
-- `espuino_lid.scad` — bottom plate, printed separately. Duplicates a handful of dimensions that must
-  stay in sync with the shell file; the sync-block list and why it exists are documented at the top of
-  `espuino_lid.scad` itself.
+- `espuino_box.scad` — the whole design: shell (walls, top/front/rear faces) and lid (bottom plate,
+  mainboard posts, battery tie-down lugs) in one file. The `part` parameter selects `"shell"`, `"lid"`,
+  or `"assembly"` (both together) for preview/export — there is no separate lid file to keep in sync;
+  a previous two-file split was dropped in favor of this single-file setup, since the OpenSCAD tooling
+  already lets you render/export each part independently from the one file via `part`.
 
-Both files are self-documenting: every parameter has an inline comment carrying its value, rationale,
+This file is self-documenting: every parameter has an inline comment carrying its value, rationale,
 and constraints (e.g. `wall`'s 5mm cap for button snap-fit, `bat_clearance`'s "do not reduce, pouch
-cells swell"). **Treat the `.scad` files as the single source of truth for current dimensions and
+cells swell"). **Treat `espuino_box.scad` as the single source of truth for current dimensions and
 design decisions — don't restate them here.** A second copy in this doc would just drift out of sync
 as the design iterates. If something needs to persist *across sessions* but isn't a stable convention
 (an open verification question, a rejected approach, a fit-test result), save it as a **project
@@ -61,9 +61,9 @@ read every time work touches this directory.
 - STL is fine for slicer handoff, but it's a lossy triangle-soup format; if exporting for anything
   other than immediate slicing, 3MF preserves more.
 
-## Print-process conventions already baked into both files
+## Print-process conventions already baked into the file
 
 - No heat-set inserts — screws self-tap directly into printed plastic (pilot-hole sizing is in the
   parameter comments, per-screw).
-- Print orientation and support strategy are called out in each file's own header comment — check
-  there before assuming both parts print the same way up.
+- Print orientation and support strategy are called out in the header comment — check there before
+  assuming the shell and lid print the same way up (they don't: shell prints top-down, lid flat).

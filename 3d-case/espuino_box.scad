@@ -6,9 +6,12 @@
 //  All screws are self-tapping directly into printed plastic.
 //  No heat-set inserts anywhere.
 //
-//  PRINT ORIENTATION: top face down on the bed. Every internal post
-//  then grows upwards and needs no support. Only the LED ring pocket
-//  in the front wall wants a little support.
+//  PRINT ORIENTATION - SHELL (part = "shell"): top face down on the bed.
+//  Every internal post then grows upwards and needs no support. Only the
+//  LED ring pocket in the front wall wants a little support.
+//
+//  PRINT ORIENTATION - LID (part = "lid"): flat, posts facing up. No
+//  support needed.
 // =====================================================================
 
 /* [Part selection] */
@@ -109,7 +112,7 @@ switch_z = 40;
 mb_span_x   = 46;
 mb_span_y   = 66;
 mb_origin_x = 10;
-mb_origin_y = 20;
+mb_origin_y = 25;
 mb_post_h   = 6;
 mb_post_d   = 6;
 mb_tap_d    = 1.6;   // self-tapping M2
@@ -119,29 +122,25 @@ mb_tap_d    = 1.6;   // self-tapping M2
 // down with zip ties, so a different cell footprint can be swapped in
 // later without redesigning walls. bat_l/bat_w/bat_clearance still
 // describe the envelope the lugs sit around, but nothing physically
-// encloses it anymore. Each lug is a square post with a zip-tie window
-// (bottom flush with the lid surface, same "maximise the bridge" logic
-// as before: bridge above works out to lug_h - lug_hole_h = 7mm) plus a
-// triangular gusset flaring the base outward, on the two faces that
-// face away from the cell - a standalone post takes the tie's inward
-// pull alone, without a continuous wall to spread it across, so it
-// needs its own bracing. The front pair of lugs anchors one tie, the
-// back pair the other (both ties run across X, same as the old 2-strap
-// layout). gusset_l = 4mm was chosen to keep clear of the mainboard
-// posts (mb_origin_x/y above) by a couple of mm - re-check by hand if
-// mb_span_x/y or bat_origin_x/y ever move.
+// encloses it anymore. Each lug is a plain rectangular post - longer
+// along Y than X, for a bigger bonded footprint at the base without
+// needing a gusset - with a zip-tie window (bottom flush with the lid
+// surface, so all the height above becomes bridge: lug_h - lug_hole_h
+// = 7mm). The front pair of lugs anchors one tie, the back pair the
+// other (both ties run across X, same as the old 2-strap layout).
 bat_l         = 65;   // envelope length, along Y (not a hard wall)
-bat_w         = 35;   // envelope width, along X
+bat_w         = 40;   // envelope width, along X
 bat_h         = 12;   // cell thickness, informational: lug_h is set to match
 bat_clearance = 2.0;  // lug inset from the nominal cell footprint. DO NOT
                       // reduce: pouch cells swell with age
-bat_origin_x  = 64;   // local to the lid
-bat_origin_y  = 18;
-lug_sq        = 8;    // lug cross-section, square
+bat_origin_x  = 62;   // local to the lid
+bat_origin_y  = 25;
+lug_x         = 5;    // lug footprint, X
+lug_y         = 20;   // lug footprint, Y - longer than lug_x on purpose
 lug_h         = 12;   // lug height, flush with bat_h
 lug_hole_w    = 4;    // zip-tie window width (Y), fits common small/medium ties
 lug_hole_h    = 5;    // zip-tie window height (Z), from the lid surface up
-gusset_l      = 4;    // gusset reach, outward from the lug along each axis
+
 
 /* [Resolution] */
 $fn = $preview ? 24 : 72;
@@ -482,20 +481,15 @@ module mainboard_posts() {
 }
 
 // Canonical lug: assumes it sits at the MIN-X,MIN-Y corner of the
-// envelope, so the cell is toward +X,+Y from here and "outward" (where
-// the gusset flares, and where nothing needs to clear the cell) is
-// -X,-Y. Other corners reuse this via mirroring - see battery_lugs().
+// envelope, extending toward +X,+Y (where the cell is). Other corners
+// reuse this via mirroring - see battery_lugs().
 module battery_lug_canonical() {
     difference() {
-        linear_extrude(lug_h)
-            polygon([
-                [-gusset_l, 0], [lug_sq, 0], [lug_sq, lug_sq],
-                [0, lug_sq], [0, -gusset_l]
-            ]);
+        cube([lug_x, lug_y, lug_h]);
         // Zip-tie window, bored straight through in X, flush with the
         // lid surface (z=0 here) so all the height above is bridge.
-        translate([-0.01, lug_sq/2 - lug_hole_w/2, 0])
-            cube([lug_sq + 0.02, lug_hole_w, lug_hole_h]);
+        translate([-0.01, lug_y/2 - lug_hole_w/2, 0])
+            cube([lug_x + 0.02, lug_hole_w, lug_hole_h]);
     }
 }
 
