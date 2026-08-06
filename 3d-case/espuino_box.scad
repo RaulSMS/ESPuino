@@ -91,10 +91,15 @@ hex_size = 3.0;   // hexagon across-corners size
 hex_wall = 1.2;   // material between hexagons
 
 /* [Rear face - connectors] */
-usb_w    = 9.2;   // USB-C cutout on the TC4056A module
+usb_w    = 9.2;   // USB-C cutout, sized for the panel-mount USB-C
+                  // extension module (amazon.es B0D8SGMGT3) that carries
+                  // the TC4056A's port out to this face
 usb_h    = 3.6;
 usb_x    = 60;
 usb_z    = 40;
+usbc_screw_span = 17;   // mounting-screw centre-to-centre, per the module's
+                        // spec ("distancia entre ejes de 17 mm")
+usbc_tap_d      = 1.6;  // self-tapping M2, same convention as mb_tap_d
 switch_d = 6.2;
 switch_x = 85;
 switch_z = 40;
@@ -108,20 +113,35 @@ mb_origin_y = 20;
 mb_post_h   = 6;
 mb_post_d   = 6;
 mb_tap_d    = 1.6;   // self-tapping M2
-// Only 3 of the 4 corners get a post.
-// 0 = front-left, 1 = front-right, 2 = rear-left, 3 = rear-right
-mb_skip_corner = 3;
 
-/* [Lid - battery cradle] */
-bat_l         = 65;
-bat_w         = 35;
-bat_h         = 12;
-bat_clearance = 2.0;  // gap on every side. DO NOT reduce: pouch cells
-                      // swell with age and must never be compressed
-bat_origin_x  = 64;
+/* [Lid - battery tie-down lugs] */
+// No continuous cage: just 4 standalone corner lugs holding the cell
+// down with zip ties, so a different cell footprint can be swapped in
+// later without redesigning walls. bat_l/bat_w/bat_clearance still
+// describe the envelope the lugs sit around, but nothing physically
+// encloses it anymore. Each lug is a square post with a zip-tie window
+// (bottom flush with the lid surface, same "maximise the bridge" logic
+// as before: bridge above works out to lug_h - lug_hole_h = 7mm) plus a
+// triangular gusset flaring the base outward, on the two faces that
+// face away from the cell - a standalone post takes the tie's inward
+// pull alone, without a continuous wall to spread it across, so it
+// needs its own bracing. The front pair of lugs anchors one tie, the
+// back pair the other (both ties run across X, same as the old 2-strap
+// layout). gusset_l = 4mm was chosen to keep clear of the mainboard
+// posts (mb_origin_x/y above) by a couple of mm - re-check by hand if
+// mb_span_x/y or bat_origin_x/y ever move.
+bat_l         = 65;   // envelope length, along Y (not a hard wall)
+bat_w         = 35;   // envelope width, along X
+bat_h         = 12;   // cell thickness, informational: lug_h is set to match
+bat_clearance = 2.0;  // lug inset from the nominal cell footprint. DO NOT
+                      // reduce: pouch cells swell with age
+bat_origin_x  = 64;   // local to the lid
 bat_origin_y  = 18;
-bat_rib_t     = 2.5;
-bat_rib_h     = 8;
+lug_sq        = 8;    // lug cross-section, square
+lug_h         = 12;   // lug height, flush with bat_h
+lug_hole_w    = 4;    // zip-tie window width (Y), fits common small/medium ties
+lug_hole_h    = 5;    // zip-tie window height (Z), from the lid surface up
+gusset_l      = 4;    // gusset reach, outward from the lug along each axis
 
 /* [Resolution] */
 $fn = $preview ? 24 : 72;
@@ -412,6 +432,13 @@ module shell_cutouts() {
     // REAR: USB-C and power switch
     translate([usb_x - usb_w/2, box_d - wall - 1, usb_z])
         cube([usb_w, wall + 2, usb_h]);
+    // USB-C module mounting screws, flanking the port cutout, level with
+    // its vertical centre (usb_z is the cutout's bottom edge, not its
+    // middle - the cube's origin is a corner, not a centre)
+    for (s = [-1, 1])
+        translate([usb_x + s * usbc_screw_span / 2, box_d - wall - 1,
+                    usb_z + usb_h / 2])
+            rotate([-90, 0, 0]) cylinder(h = wall + 2, d = usbc_tap_d);
     translate([switch_x, box_d - wall - 1, switch_z])
         rotate([-90, 0, 0]) cylinder(h = wall + 2, d = switch_d);
 
@@ -449,23 +476,43 @@ module mainboard_posts() {
         [mb_origin_x,             mb_origin_y + mb_span_y],
         [mb_origin_x + mb_span_x, mb_origin_y + mb_span_y]
     ];
-    for (i = [0 : 3]) if (i != mb_skip_corner)
+    for (i = [0 : 3])
         translate([pts[i][0], pts[i][1], lid_t])
             post(mb_post_h, mb_post_d, mb_tap_d);
 }
 
-// Open cradle: four short ribs with clearance all round. The cell is
-// located laterally but never squeezed, and nothing sharp touches it.
-module battery_cradle() {
+// Canonical lug: assumes it sits at the MIN-X,MIN-Y corner of the
+// envelope, so the cell is toward +X,+Y from here and "outward" (where
+// the gusset flares, and where nothing needs to clear the cell) is
+// -X,-Y. Other corners reuse this via mirroring - see battery_lugs().
+module battery_lug_canonical() {
+    difference() {
+        linear_extrude(lug_h)
+            polygon([
+                [-gusset_l, 0], [lug_sq, 0], [lug_sq, lug_sq],
+                [0, lug_sq], [0, -gusset_l]
+            ]);
+        // Zip-tie window, bored straight through in X, flush with the
+        // lid surface (z=0 here) so all the height above is bridge.
+        translate([-0.01, lug_sq/2 - lug_hole_w/2, 0])
+            cube([lug_sq + 0.02, lug_hole_w, lug_hole_h]);
+    }
+}
+
+module battery_lugs() {
     ow = bat_w + 2 * bat_clearance;
     ol = bat_l + 2 * bat_clearance;
-    for (dx = [0, ow + bat_rib_t])
-        translate([bat_origin_x + dx - bat_rib_t, bat_origin_y, lid_t])
-            cube([bat_rib_t, ol, bat_rib_h]);
-    for (dy = [0, ol + bat_rib_t])
-        translate([bat_origin_x - bat_rib_t,
-                   bat_origin_y + dy - bat_rib_t, lid_t])
-            cube([ow + 2 * bat_rib_t, bat_rib_t, bat_rib_h]);
+    // [x, y, mirror-x, mirror-y] for each of the 4 envelope corners
+    corners = [
+        [bat_origin_x,      bat_origin_y,       1,  1],
+        [bat_origin_x + ow, bat_origin_y,      -1,  1],
+        [bat_origin_x,      bat_origin_y + ol,  1, -1],
+        [bat_origin_x + ow, bat_origin_y + ol, -1, -1],
+    ];
+    for (c = corners)
+        translate([c[0], c[1], lid_t])
+            scale([c[2], c[3], 1])
+                battery_lug_canonical();
 }
 
 module lid() {
@@ -473,7 +520,7 @@ module lid() {
         union() {
             skirted_box(lid_w, lid_d, lid_t, corner_r, lid_ch);
             mainboard_posts();
-            battery_cradle();
+            battery_lugs();
         }
         for (p = corner_pts())
             translate([p[0] - lid_origin, p[1] - lid_origin, -0.01]) {
