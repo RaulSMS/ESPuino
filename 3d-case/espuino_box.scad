@@ -477,6 +477,17 @@ module usb_shelf_ramps() {
     usb_shelf_ramp(usb_x + usb_shelf_w/2);               // right strip
 }
 
+// 2D stadium (rounded rectangle, semicircular caps) for the USB-C
+// cutout, drawn directly in world X/Z values - the rotate([90,0,0])
+// used to extrude this through the wall (see shell_cutouts()) leaves
+// local X mapped straight to world X and local Y straight to world Z,
+// so no extra offset math is needed here.
+module usb_cutout_profile() {
+    r = usb_h / 2;
+    hull() for (x = [usb_x - usb_w/2 + r, usb_x + usb_w/2 - r])
+        translate([x, usb_z + r]) circle(r = r);
+}
+
 module shell_cutouts() {
     // FRONT: ring pocket from the inside, honeycomb through the middle
     translate([box_w/2, 0, front_centre_z]) rotate([-90, 0, 0]) {
@@ -499,9 +510,13 @@ module shell_cutouts() {
     top_engraving();
     side_engraving();
 
-    // REAR: USB-C and power switch
-    translate([usb_x - usb_w/2, box_d - wall - 1, usb_z])
-        cube([usb_w, wall + 2, usb_h]);
+    // REAR: USB-C and power switch. Stadium-shaped (semicircular caps,
+    // radius = usb_h/2) rather than a sharp rectangle, matching the
+    // rounded-oval cutout on real USB-C panel-mount modules.
+    translate([0, box_d + 1, 0])
+        rotate([90, 0, 0])
+            linear_extrude(height = wall + 2)
+                usb_cutout_profile();
     // USB-C module mounting screws, flanking the port cutout, level with
     // its vertical centre (usb_z is the cutout's bottom edge, not its
     // middle - the cube's origin is a corner, not a centre)
