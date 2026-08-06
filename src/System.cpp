@@ -36,7 +36,7 @@ std::atomic<bool> System_GoToSleep = false; // Flag for turning uC immediately i
 std::atomic<bool> System_Sleeping = false; // Flag for turning into deepsleep is in progress
 std::atomic<bool> System_Rebooting = false; // Flag for rebooting is in progress
 std::atomic<bool> System_LockControls = false; // Flag if buttons and rotary encoder is locked
-uint8_t System_MaxInactivityTime = 10u; // Time in minutes, after uC is put to deep sleep because of inactivity (and modified later via GUI)
+uint8_t System_MaxInactivityTime = 0u; // Time in minutes, after uC is put to deep sleep because of inactivity (0 = disabled, and modified later via GUI)
 uint8_t System_SleepTimer = 30u; // Sleep timer in minutes that can be optionally used (and modified later via MQTT or RFID)
 
 // Operation Mode
