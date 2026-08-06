@@ -33,9 +33,18 @@ lid_lip   = 3;     // depth of the rebate the lid drops into
 lid_gap   = 0.25;  // fit clearance. Raise to 0.35 if too tight
 lid_ch    = 0.6;   // chamfer on the lid's visible bottom edge
 post_inset = 7;    // screw centre, measured in from the inner wall face
-post_sq    = 15;   // side of the square corner block
-post_ch    = 5;    // 45 deg cut on the block's exposed inner corner
+post_sq    = 15;   // side of the square corner block, plain (no chamfer)
 post_h     = 14;   // block height above the lid shoulder
+// The shell prints top face down (see the header comment), so this
+// block's free end (post_h above the lid shoulder) is reached FIRST as
+// printing proceeds - with nothing above it, since the block sticks
+// post_sq beyond the thin wall. post_ramp adds a 45 deg taper above the
+// block, collapsing to a point at the wall corner (already solid at
+// every Z), so the block has something to build on instead of needing
+// support material. Ramp height = post_sq gives exactly 45 deg on the
+// block's two flat outward faces; the single diagonal corner works out
+// a little steeper (~55 deg from vertical) but that's just a short
+// ridge, not a full overhang face - fine for FDM in practice.
 m3_tap_d   = 2.5;  // self-tapping M3 into plastic
 m3_free_d  = 3.4;  // M3 clearance hole
 m3_head_d  = 6.4;  // countersink diameter
@@ -113,6 +122,15 @@ usb_shelf_d   = 30;   // shelf depth (Y), how far it reaches into the box
 usb_shelf_h   = 10;   // shelf height (Z)
 usb_shelf_gap = 2;    // gap from the cutout's bottom edge down to the
                       // shelf's top (resting) surface
+// Same print-orientation problem as the corner posts (see post_h above):
+// the shelf's top is reached first, with nothing above it, since it
+// reaches usb_shelf_d into the box away from the wall. Ramping the
+// FULL width like the posts would grow right through the USB cutout
+// (only usb_shelf_gap above), so instead just the two outer edges get
+// a ramp, each usb_ramp_w wide, rising at 45 deg back to the rear wall
+// (which is solid at every Z) - leaving the centre, under the cutout
+// itself, open.
+usb_ramp_w    = 5;    // ramp width (X), each side
 switch_d = 6.2;
 switch_x = 85;
 switch_z = 40;
@@ -372,18 +390,19 @@ module side_engraving() {
 //  Shell
 // =====================================================================
 
-module corner_block(s, c, h) {
-    linear_extrude(h)
-        polygon([[0, 0], [s, 0], [s, s - c], [s - c, s], [0, s]]);
-}
-
 module corner_post_solid() {
-    difference() {
-        translate([wall, wall, lid_shoulder_z])
-            corner_block(post_sq, post_ch, post_h);
-        translate([wall + post_inset, wall + post_inset,
-                   lid_shoulder_z - lid_t - 1])
-            cylinder(h = post_h + lid_t + 1, d = m3_tap_d);
+    union() {
+        difference() {
+            translate([wall, wall, lid_shoulder_z])
+                cube([post_sq, post_sq, post_h]);
+            translate([wall + post_inset, wall + post_inset,
+                       lid_shoulder_z - lid_t - 1])
+                cylinder(h = post_h + lid_t + 1, d = m3_tap_d);
+        }
+        // Print-support ramp, see the post_h comment above.
+        translate([wall, wall, lid_shoulder_z + post_h])
+            linear_extrude(height = post_sq, scale = 0)
+                square(post_sq);
     }
 }
 
@@ -421,6 +440,26 @@ module usb_shelf() {
     translate([usb_x - usb_shelf_w/2, box_d - wall - usb_shelf_d,
                 usb_z - usb_shelf_gap - usb_shelf_h])
         cube([usb_shelf_w, usb_shelf_d, usb_shelf_h]);
+}
+
+// Print-support ramp for one usb_ramp_w-wide strip of the shelf, see
+// the usb_ramp_w comment above. x_end is the strip's world-X edge
+// nearer usb_x (the strip runs from x_end - usb_ramp_w to x_end).
+module usb_shelf_ramp(x_end) {
+    shelf_top = usb_z - usb_shelf_gap;
+    translate([x_end, 0, 0])
+        rotate([0, -90, 0])
+            linear_extrude(height = usb_ramp_w)
+                polygon([
+                    [shelf_top, box_d - wall - usb_shelf_d],
+                    [shelf_top, box_d - wall],
+                    [shelf_top + usb_shelf_d, box_d - wall]
+                ]);
+}
+
+module usb_shelf_ramps() {
+    usb_shelf_ramp(usb_x - usb_shelf_w/2 + usb_ramp_w); // left strip
+    usb_shelf_ramp(usb_x + usb_shelf_w/2);               // right strip
 }
 
 module shell_cutouts() {
@@ -477,6 +516,7 @@ module shell() {
             rfid_posts();
             speaker_bosses();
             usb_shelf();
+            usb_shelf_ramps();
         }
         shell_cutouts();
     }
