@@ -90,12 +90,29 @@ staff_shift = -3;    // vertical nudge. Negative balances the stems,
 
 /* [Front face - speaker and LED ring, one integrated piece] */
 front_centre_z     = 62;
-led_ring_id        = 27.0;
-ring_seat_d        = 35.4;  // pocket the LED ring drops into, from inside
+led_ring_id        = 25.0;
+ring_seat_d        = 40;  // pocket the LED ring drops into, from inside
 diffuser_t         = 1.2;   // wall the LEDs shine through. 1.0-1.4
 speaker_screw_span = 37;    // centre-to-centre of the two speaker screws
-speaker_boss_h     = 5;
-speaker_boss_d     = 10;
+speaker_boss_h     = 10;
+// Each screw boss is a wedge (square tip, widening at 45 deg back to
+// the wall) instead of a plain horizontal cylinder: a solid round pin
+// sticking straight out from a wall doesn't grow its own support
+// gradually (every Y-depth layer of a cylinder reaches the full
+// speaker_boss_h in one go, near-vertical at the very top/bottom of
+// the circle), so it sags without print support. The wedge's Y-reach
+// instead grows linearly with |Z - front_centre_z|, self-supporting at
+// exactly 45 deg everywhere.
+speaker_boss_w     = 10;    // wedge tip size (square, X and Z)
+// ring_seat_d (40mm) is now bigger than speaker_screw_span (37mm), so
+// the screw centres sit INSIDE the ring pocket's radius - cutting the
+// pocket through the wedges' full depth (like the old design did)
+// would remove almost all of each wedge, screw hole included. Instead
+// only clear ring_clearance_d of depth near the wall, leaving the rest
+// of each wedge (including the tip, where the tap hole is) intact.
+// ring_clearance_d is a GUESS at how far the real LED ring module's
+// body needs to reach past the wall - verify against the actual part.
+ring_clearance_d   = 3;
 
 /* [Front face - honeycomb grille] */
 grille_d = 25.5;  // must stay inside led_ring_id
@@ -118,8 +135,8 @@ usbc_tap_d      = 1.6;  // self-tapping M2, same convention as mb_tap_d
 // PCB is expected to be thicker than the cutout height and land on this
 // shelf once dropped in.
 usb_shelf_w   = 25;   // shelf width (X), centred on usb_x
-usb_shelf_d   = 30;   // shelf depth (Y), how far it reaches into the box
-usb_shelf_h   = 10;   // shelf height (Z)
+usb_shelf_d   = 20;   // shelf depth (Y), how far it reaches into the box
+usb_shelf_h   = 5;   // shelf height (Z)
 usb_shelf_gap = 2;    // gap from the cutout's bottom edge down to the
                       // shelf's top (resting) surface
 // Same print-orientation problem as the corner posts (see post_h above):
@@ -130,7 +147,7 @@ usb_shelf_gap = 2;    // gap from the cutout's bottom edge down to the
 // a ramp, each usb_ramp_w wide, rising at 45 deg back to the rear wall
 // (which is solid at every Z) - leaving the centre, under the cutout
 // itself, open.
-usb_ramp_w    = 5;    // ramp width (X), each side
+usb_ramp_w    = 4;    // ramp width (X), each side, set it to 0 if you want to use the screws
 switch_d = 6.2;
 switch_x = 85;
 switch_z = 40;
@@ -428,25 +445,43 @@ module rfid_posts() {
                 post(rfid_post_h, rfid_post_d, rfid_tap_d, rfid_post_taper);
 }
 
-// Two bosses that hold the speaker, arranged horizontally (left/right
-// of the ring, both at front_centre_z) rather than stacked vertically -
-// horizontal bosses cantilevered straight out from the wall need their
-// own print support regardless of arrangement, but this spreads the
-// load through the same, most-continuous band of wall material instead
-// of putting one boss up near the honeycomb cutout's curvature. Their
-// pilot holes sit ~0.45 mm inside the ring pocket edge. That sliver is
-// intentional: it is what lets a 37 mm screw span clear a 35 mm ring.
-// The bosses are trimmed flush with the pocket wall so the ring still
-// seats.
+// One speaker screw boss: a trapezoid in the Y-Z plane (square tip at
+// the free end, widening at 45 deg back to the wall), extruded along X
+// by speaker_boss_w so the tip is a speaker_boss_w square. See the
+// speaker_boss_w comment above for why - self-supporting in a way a
+// plain horizontal cylinder isn't.
+module speaker_boss_wedge(x_pos) {
+    difference() {
+        translate([x_pos, 0, 0])
+            rotate([0, -90, 0])
+                linear_extrude(height = speaker_boss_w, center = true)
+                    polygon([
+                        [front_centre_z - speaker_boss_w/2 - speaker_boss_h, wall],
+                        [front_centre_z - speaker_boss_w/2, wall + speaker_boss_h],
+                        [front_centre_z + speaker_boss_w/2, wall + speaker_boss_h],
+                        [front_centre_z + speaker_boss_w/2 + speaker_boss_h, wall]
+                    ]);
+        translate([x_pos, wall - 0.01, front_centre_z])
+            rotate([-90, 0, 0])
+                cylinder(h = speaker_boss_h + 0.02, d = m3_tap_d);
+    }
+}
+
+// Two wedge bosses that hold the speaker, arranged horizontally
+// (left/right of the ring, both at front_centre_z) rather than stacked
+// vertically - this spreads the load through the same, most-continuous
+// band of wall material instead of putting one boss up near the
+// honeycomb cutout's curvature. See ring_clearance_d above for why only
+// a shallow near-wall slice gets cut for the ring, not each wedge's
+// full depth.
 module speaker_bosses() {
-    translate([box_w/2, wall, front_centre_z]) rotate([-90, 0, 0])
-        difference() {
-            for (s = [-1, 1])
-                translate([s * speaker_screw_span / 2, 0, 0])
-                    post(speaker_boss_h, speaker_boss_d, m3_tap_d);
-            translate([0, 0, -0.01])
-                cylinder(h = speaker_boss_h + 0.02, d = ring_seat_d);
-        }
+    difference() {
+        for (s = [-1, 1])
+            speaker_boss_wedge(box_w/2 + s * speaker_screw_span / 2);
+        translate([box_w/2, wall - 0.01, front_centre_z])
+            rotate([-90, 0, 0])
+                cylinder(h = ring_clearance_d + 0.01, d = ring_seat_d);
+    }
 }
 
 // Solid shelf against the inside of the rear wall, below the USB-C
