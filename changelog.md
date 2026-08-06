@@ -2,7 +2,7 @@
 
 ## DEV-branch
 
-...nothing yet
+* 06.08.2026: Disable deep-sleep-after-inactivity by default (previously 10 minutes) - new devices no longer fall asleep on their own unless the user opts in via General -> Power -> Deep Sleep
 
 ## Version 2.9 (19.07.2026)
 

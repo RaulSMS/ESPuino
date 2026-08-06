@@ -153,6 +153,9 @@
 		constexpr uint32_t deepsleepTimeAfterBootFails = 20;
 	#endif
 
+	// Auto deep-sleep after inactivity (0 = disabled); only seeds NVS on first boot, can be changed later via GUI!
+	constexpr uint8_t s_maxInactivityTime = 0;
+
 	// timezone
 	constexpr const char timeZone[] = "CET-1CEST,M3.5.0,M10.5.0/3"; // Europe/Berlin
 
