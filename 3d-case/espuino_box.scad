@@ -413,21 +413,36 @@ module corner_posts() {
                 corner_post_solid();
 }
 
+// post()'s flared foot is always at its own local Z=0 - correct as-is
+// for a post growing UP from something it's attached to (mainboard
+// posts, speaker bosses), but here the post attaches to the TOP face
+// and hangs DOWN into the box, so the attachment point needs to be at
+// local Z=0 instead: translate there, then mirror so the post's local
+// +Z growth (with the flare at its base) runs in world -Z. Without
+// this the flare ends up at the free tip and the narrow constant-width
+// section at the attachment - backwards, and weaker where it matters.
 module rfid_posts() {
     for (p = rfid_pts())
-        translate([p[0], p[1], box_h - wall - rfid_post_h])
-            post(rfid_post_h, rfid_post_d, rfid_tap_d, rfid_post_taper);
+        translate([p[0], p[1], box_h - wall])
+            mirror([0, 0, 1])
+                post(rfid_post_h, rfid_post_d, rfid_tap_d, rfid_post_taper);
 }
 
-// Two bosses that hold the speaker. Their pilot holes sit ~0.45 mm
-// inside the ring pocket edge. That sliver is intentional: it is what
-// lets a 37 mm screw span clear a 35 mm ring. The bosses are trimmed
-// flush with the pocket wall so the ring still seats.
+// Two bosses that hold the speaker, arranged horizontally (left/right
+// of the ring, both at front_centre_z) rather than stacked vertically -
+// horizontal bosses cantilevered straight out from the wall need their
+// own print support regardless of arrangement, but this spreads the
+// load through the same, most-continuous band of wall material instead
+// of putting one boss up near the honeycomb cutout's curvature. Their
+// pilot holes sit ~0.45 mm inside the ring pocket edge. That sliver is
+// intentional: it is what lets a 37 mm screw span clear a 35 mm ring.
+// The bosses are trimmed flush with the pocket wall so the ring still
+// seats.
 module speaker_bosses() {
     translate([box_w/2, wall, front_centre_z]) rotate([-90, 0, 0])
         difference() {
             for (s = [-1, 1])
-                translate([0, s * speaker_screw_span / 2, 0])
+                translate([s * speaker_screw_span / 2, 0, 0])
                     post(speaker_boss_h, speaker_boss_d, m3_tap_d);
             translate([0, 0, -0.01])
                 cylinder(h = speaker_boss_h + 0.02, d = ring_seat_d);
