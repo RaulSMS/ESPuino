@@ -103,6 +103,16 @@ usb_z    = 40;
 usbc_screw_span = 17;   // mounting-screw centre-to-centre, per the module's
                         // spec ("distancia entre ejes de 17 mm")
 usbc_tap_d      = 1.6;  // self-tapping M2, same convention as mb_tap_d
+// Shelf inside the rear wall for the USB-C module to physically rest
+// on, so it's not relying on the two mounting screws alone. Top surface
+// sits usb_shelf_gap below the cutout's bottom edge (usb_z); the module's
+// PCB is expected to be thicker than the cutout height and land on this
+// shelf once dropped in.
+usb_shelf_w   = 25;   // shelf width (X), centred on usb_x
+usb_shelf_d   = 30;   // shelf depth (Y), how far it reaches into the box
+usb_shelf_h   = 10;   // shelf height (Z)
+usb_shelf_gap = 2;    // gap from the cutout's bottom edge down to the
+                      // shelf's top (resting) surface
 switch_d = 6.2;
 switch_x = 85;
 switch_z = 40;
@@ -128,19 +138,18 @@ mb_tap_d    = 1.6;   // self-tapping M2
 // surface, so all the height above becomes bridge: lug_h - lug_hole_h
 // = 7mm). The front pair of lugs anchors one tie, the back pair the
 // other (both ties run across X, same as the old 2-strap layout).
-bat_l         = 65;   // envelope length, along Y (not a hard wall)
-bat_w         = 40;   // envelope width, along X
+bat_l         = 50;   // envelope length, along Y (not a hard wall)
+bat_w         = 30;   // envelope width, along X
 bat_h         = 12;   // cell thickness, informational: lug_h is set to match
 bat_clearance = 2.0;  // lug inset from the nominal cell footprint. DO NOT
                       // reduce: pouch cells swell with age
-bat_origin_x  = 62;   // local to the lid
+bat_origin_x  = 65;   // local to the lid
 bat_origin_y  = 25;
-lug_x         = 5;    // lug footprint, X
+lug_x         = 10;    // lug footprint, X
 lug_y         = 20;   // lug footprint, Y - longer than lug_x on purpose
 lug_h         = 12;   // lug height, flush with bat_h
 lug_hole_w    = 4;    // zip-tie window width (Y), fits common small/medium ties
 lug_hole_h    = 5;    // zip-tie window height (Z), from the lid surface up
-
 
 /* [Resolution] */
 $fn = $preview ? 24 : 72;
@@ -406,6 +415,14 @@ module speaker_bosses() {
         }
 }
 
+// Solid shelf against the inside of the rear wall, below the USB-C
+// cutout, for the module to rest on if it's not screwed down.
+module usb_shelf() {
+    translate([usb_x - usb_shelf_w/2, box_d - wall - usb_shelf_d,
+                usb_z - usb_shelf_gap - usb_shelf_h])
+        cube([usb_shelf_w, usb_shelf_d, usb_shelf_h]);
+}
+
 module shell_cutouts() {
     // FRONT: ring pocket from the inside, honeycomb through the middle
     translate([box_w/2, 0, front_centre_z]) rotate([-90, 0, 0]) {
@@ -459,6 +476,7 @@ module shell() {
             corner_posts();
             rfid_posts();
             speaker_bosses();
+            usb_shelf();
         }
         shell_cutouts();
     }
