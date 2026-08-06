@@ -195,6 +195,9 @@
 		constexpr uint32_t deepsleepTimeAfterBootFails = 20;      // Automatic restart takes place if boot was not successful after this period (in seconds)
 	#endif
 
+	// Auto deep-sleep after inactivity (0 = disabled); only seeds NVS on first boot, can be changed later via GUI!
+	constexpr uint8_t s_maxInactivityTime = 0;
+
 	// FTP
 	// Nothing to be configured here...
 	// Default user/password is esp32/esp32 but can be changed via webgui

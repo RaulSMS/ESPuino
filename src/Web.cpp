@@ -1137,7 +1137,7 @@ static void settingsToJSON(JsonObject obj, const String section) {
 		generalObj["initVolume"].set(gPrefsSettings.getUInt("initVolume", 3));
 		generalObj["maxVolumeSp"].set(gPrefsSettings.getUInt("maxVolumeSp", 21));
 		generalObj["maxVolumeHp"].set(gPrefsSettings.getUInt("maxVolumeHp", 21));
-		generalObj["sleepInactivity"].set(gPrefsSettings.getUInt("mInactiviyT", 0));
+		generalObj["sleepInactivity"].set(gPrefsSettings.getUInt("mInactiviyT", s_maxInactivityTime));
 		generalObj["rotSeekStep"].set(gPrefsSettings.getUChar("rotSeekStep", JUMP_OFFSET_ROTARY)); // seconds per detent when seeking via a rotary gesture
 		generalObj["playMono"].set(gPrefsSettings.getBool("playMono", false));
 		generalObj["savePosShutdown"].set(gPrefsSettings.getBool("savePosShutdown", false)); // SAVE_PLAYPOS_BEFORE_SHUTDOWN
@@ -1296,7 +1296,7 @@ static void settingsToJSON(JsonObject obj, const String section) {
 		genSettings["initVolume"].set(AUDIOPLAYER_VOLUME_INIT);
 		genSettings["maxVolumeSp"].set(AUDIOPLAYER_VOLUME_MAX);
 		genSettings["maxVolumeHp"].set(18u); // gPrefsSettings.getUInt("maxVolumeHp", 0));
-		genSettings["sleepInactivity"].set(0u); // System_MaxInactivityTime
+		genSettings["sleepInactivity"].set(s_maxInactivityTime); // System_MaxInactivityTime
 		genSettings["playMono"].set(false); // PLAY_MONO_SPEAKER
 		genSettings["savePosShutdown"].set(false); // SAVE_PLAYPOS_BEFORE_SHUTDOWN
 		genSettings["savePosRfidChge"].set(false); // SAVE_PLAYPOS_WHEN_RFID_CHANGE
